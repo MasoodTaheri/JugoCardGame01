@@ -205,7 +205,7 @@ public class GamePlayManager : MonoBehaviour
         else
         {
             var profiles = JsonUtility.FromJson<AvatarProfiles>(computerProfiles.text).profiles;
-            for(int i = 0; i < profiles.Count; i++)
+            for (int i = 0; i < profiles.Count; i++)
             {
                 players[i + 1].SetAvatarProfile(profiles[i]);
             }
@@ -225,7 +225,7 @@ public class GamePlayManager : MonoBehaviour
             cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Wild));
             cards.Add(CreateCardOnDeck(CardType.Other, CardValue.DrawTwo));
             cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Ego));
-            if(j <= 2)
+            if (j <= 2)
             {
                 cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Odd));
                 cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Even));
@@ -236,7 +236,7 @@ public class GamePlayManager : MonoBehaviour
             for (int j = 1; j <= 4; j++)
             {
                 cards.Add(CreateCardOnDeck((CardType)j, (CardValue)i));
-               // cards.Add(CreateCardOnDeck((CardType)j, (CardValue)i));
+                // cards.Add(CreateCardOnDeck((CardType)j, (CardValue)i));
             }
         }
     }
@@ -327,21 +327,22 @@ public class GamePlayManager : MonoBehaviour
         cards.RemoveAt(0);
         GameManager.PlaySound(throw_card_clip);
         p.GetTotalPoints(); // add points to text .... .. . 
-        //p.GetListOfValues();
-        //p.GetDoubleCard();
-       // CurrentPlayer.UpdateCardColor();
+                            //p.GetListOfValues();
+                            //p.GetDoubleCard();
+                            // CurrentPlayer.UpdateCardColor();
         return temp;
     }
 
     public void PutCardToWastePile(Card c, Player p = null)
     {
-        if(CurrentPlayer.isUserPlayer && !CurrentPlayer.isUserClicked)
+        Debug.Log("PutCardToWastePile");
+        if (CurrentPlayer.isUserPlayer && !CurrentPlayer.isUserClicked)
         {
             //CurrentPlayer.isUserClicked = true;
             NextPlayerTurn();
             return;
         }
-        if(c == null)
+        if (c == null)
         {
             NextPlayerTurn();
             return;
@@ -374,7 +375,7 @@ public class GamePlayManager : MonoBehaviour
             //    Invoke("SetupGameOver", 2f);
             //    return;
             //}
-            Debug.LogError("ccccccccc      CardType = " + c.Type);
+            //Debug.LogError("ccccccccc      CardType = " + c.Type);
             if (c.Type == CardType.Other || (c.Value == CardValue.Wild && CurrentPlayer.isSequentialCards))
             {
                 //CurrentPlayer.Timer = true;
@@ -390,7 +391,7 @@ public class GamePlayManager : MonoBehaviour
                 //    Invoke("ChooseColorforAI", Random.Range(3f, 9f));
                 //    Debug.LogError("ChooseColorforAI . .. . ");
                 //}
-                
+
                 if (c.Value == CardValue.DrawTwo)
                 {
                     //NextPlayerIndex();
@@ -398,9 +399,9 @@ public class GamePlayManager : MonoBehaviour
                     //wildCardParticle.Emit(30);
                     //StartCoroutine(DealCardsToPlayer(CurrentPlayer, 2, .5f));
                     //Invoke("NextPlayerTurn", 1.5f);
-                    
+
                     Invoke("NextPlayerTurn", 2f);
-                    Invoke("DrawTwoCard", 2.5f);   
+                    Invoke("DrawTwoCard", 2.5f);
                 }
                 //else if (c.Value == CardValue.Odd)
                 //{
@@ -423,10 +424,10 @@ public class GamePlayManager : MonoBehaviour
                         isEven = true;
                     }
 
-                    if(!CurrentPlayer.isSequentialCards)
+                    if (!CurrentPlayer.isSequentialCards)
                     {
                         Invoke("NextPlayerTurn", 2f);
-                    }                    
+                    }
                 }
             }
             else
@@ -461,17 +462,17 @@ public class GamePlayManager : MonoBehaviour
                 //}
                 //else
                 //{
-                Debug.LogError("CurrentPlayer.isDoubleCards = " + CurrentPlayer.isDoubleCards + "  &  = CurrentPlayer.isSequentialCards = " + CurrentPlayer.isSequentialCards);
-                Debug.LogError("CurrentPlayer.isOddEvenDoubles = " + CurrentPlayer.isOddEvenDoubles);
+                //Debug.LogError("CurrentPlayer.isDoubleCards = " + CurrentPlayer.isDoubleCards + "  &  = CurrentPlayer.isSequentialCards = " + CurrentPlayer.isSequentialCards);
+                //Debug.LogError("CurrentPlayer.isOddEvenDoubles = " + CurrentPlayer.isOddEvenDoubles);
                 if (CurrentPlayer.isDoubleCards)
                 {
                     return;
                 }
-                else if(CurrentPlayer.isSequentialCards)
+                else if (CurrentPlayer.isSequentialCards)
                 {
                     return;
                 }
-                else if (CurrentPlayer.isOddEvenDoubles) 
+                else if (CurrentPlayer.isOddEvenDoubles)
                 {
                     return;
                 }
@@ -481,7 +482,7 @@ public class GamePlayManager : MonoBehaviour
                     Invoke("NextPlayerTurn", 2f);
                 }
                 //}
-                    
+
                 //}
             }
         }
@@ -501,7 +502,7 @@ public class GamePlayManager : MonoBehaviour
         if (gameOver) yield break;
 
         List<int> indexes = new List<int>();
-        for(int i = 1; i < players.Count; i++)
+        for (int i = 1; i < players.Count; i++)
         {
             indexes.Add(i);
         }
@@ -559,7 +560,7 @@ public class GamePlayManager : MonoBehaviour
         else
         {
             OnDeckClick();
-        }        
+        }
         NextPlayerIndex();
         CurrentPlayer.OnTurn();
     }
@@ -624,13 +625,13 @@ public class GamePlayManager : MonoBehaviour
         {
             PickCardFromDeck(CurrentPlayer, true);
             CurrentPlayer.pickFromDeck = true;
-           // CurrentPlayer.UpdateCardColor();
+            // CurrentPlayer.UpdateCardColor();
         }
     }
 
     public void ResetPlayerCards()
     {
-        if(CurrentPlayer.isUserPlayer)
+        if (CurrentPlayer.isUserPlayer)
         {
             oddEvenCount++;
             CurrentPlayer.OnTurn();
@@ -672,7 +673,7 @@ public class GamePlayManager : MonoBehaviour
     public void SetupGameOver()
     {
         gameOver = true;
-        for(int i = players.Count - 1; i >= 0; i--)
+        for (int i = players.Count - 1; i >= 0; i--)
         {
             if (!players[i].isInRoom)
             {
@@ -721,7 +722,7 @@ public class GamePlayManager : MonoBehaviour
             playerObject[i].GetComponentsInChildren<Image>()[1].sprite = players[i].avatarImage.sprite;
         }
 
-        for(int i = 0; i < playerPoints.Count; i++)
+        for (int i = 0; i < playerPoints.Count; i++)
         {
             playerPoints[i].text = players[i].GetTotalPoints().ToString();
         }
@@ -729,7 +730,7 @@ public class GamePlayManager : MonoBehaviour
         GameManager.PlaySound(winner.isUserPlayer ? music_win_clip : music_loss_clip);
         gameOverPopup.SetActive(true);
 
-        for(int i = 1; i < players.Count; i++)
+        for (int i = 1; i < players.Count; i++)
         {
             if (players[i].isUserPlayer)
             {

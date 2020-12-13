@@ -460,7 +460,7 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
             Debug.Log("OnEvent  PhotonEvent_LeaveMatch");
             PhotonNetwork.LeaveRoom();
         }
-
+        
     }
 
 

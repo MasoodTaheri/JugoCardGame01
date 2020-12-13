@@ -4361,7 +4361,7 @@ MonoBehaviour:
   createRoomTF: {fileID: 416803587}
   joinRoomTF: {fileID: 273074676}
   isConnecting: 0
-  WaitBeforeStartGame: 30
+  WaitBeforeStartGame: 15
 --- !u!1 &1231201740
 GameObject:
   m_ObjectHideFlags: 0
@@ -7493,7 +7493,6 @@ MonoBehaviour:
   RotateVec: {x: 0, y: 0, z: 100}
   CurrnetPlayerTxt: {fileID: 2117012260}
   RemainTimeTxt: {fileID: 1056630694}
-  RemainTime: 0
 --- !u!1 &1964631296
 GameObject:
   m_ObjectHideFlags: 0

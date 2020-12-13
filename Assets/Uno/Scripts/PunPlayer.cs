@@ -11,10 +11,9 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
-public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstantiateMagicCallback
+public class PunPlayer : MonoBehaviour
 {
-    public PhotonView photonView;
-    public GameObject playerGO;
+    public PhotonView PV;
     public GameObject CardPanelBG;
     public PlayerCards cardsPanel;
     public string playerName;
@@ -29,7 +28,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
 
     public List<int> cardVal;
 
-    private float totalTimer;// = 15f;
+    private float totalTimer = 15f;
 
     [HideInInspector]
     public bool pickFromDeck, unoClicked, choosingColor;
@@ -37,81 +36,19 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     public bool isInRoom = true;
 
     public bool isDoubleCards, isSequentialCards, isOddEvenDoubles;
-    public int playerNum;
-    public bool isComputerTurn;
-    private Vector3 smoothMove;
 
     void Start()
     {
-        PhotonNetwork.SendRate = 20;
-        PhotonNetwork.SerializationRate = 15;
-        if (photonView.IsMine)
-        {
-            //SmoothMovement();
-            isUserPlayer = true;
-            playerName = PhotonNetwork.NickName;            
-            playerGO = GameObject.Find("Players Cards").transform.GetChild(i).gameObject;
-            //Debug.LogError("isMine  playerName = " + playerName);
-        }
-        else
-        {
-            isUserPlayer = false;
-            playerName = photonView.Owner.NickName;
-            playerGO = GameObject.Find("Players Cards").transform.GetChild(i).gameObject;
-            //Debug.LogError("other  playerName = " + playerName);
-        }
-
-        //photonView.RPC("AttachToPlayerObj", RpcTarget.AllBuffered);
-        //playerGO = GameObject.Find("Players Cards").transform.GetChild(0).gameObject;// MultiPlayerGamePlayManager.instance.playerCounts - 1).gameObject;
-        CardPanelBG = playerGO;
-        CardPanelBG.SetActive(true);
-        cardsPanel = playerGO.transform.GetChild(0).GetComponent<PlayerCards>();
-        messageLbl = playerGO.transform.GetChild(2).gameObject.GetComponent<Text>();
-        starParticleSystem = playerGO.transform.GetChild(1).gameObject.GetComponent<ParticleSystem>();
-
-        avatarName.text = playerName;
-        //avatarName.text = GameMaster.instance.playerNames[0];
-        //Debug.LogError("playerName = "+ avatarName.text);
-
-        totalTimer = MultiPlayerGamePlayManager.instance.turnDuration;
+        PV = GetComponent<PhotonView>();
         Timer = false;
-    }
-
-    //[PunRPC]
-    //void AttachToPlayerObj()
-    //{
-    //    this.gameObject.transform.parent = MultiPlayerGamePlayManager.instance.playerPos.transform;
-    //}   
-    
-    int i = 0;
-    public void OnPhotonInstantiate(PhotonMessageInfo info)
-    {
-        if(info.Sender.IsLocal)
-        {
-            //Debug.LogError("Is this mine?... " + info.Sender.IsLocal.ToString() + "  & playerName = " +this.photonView.Owner.NickName);
-            i = 0;
-        }
-        else
-        {
-            //Debug.LogError("Is this mine?... " + info.Sender.IsLocal.ToString() + "  & playerName = " + this.photonView.Owner.NickName);
-            i = 1;
-        }
-
-        MultiPlayerGamePlayManager.instance.players.Add(this.GetComponent<PunPlayer>());
-        this.transform.SetParent(MultiPlayerGamePlayManager.instance.playersPos[i].transform);
-        this.transform.localScale = Vector3.one;
-        this.transform.localPosition = Vector3.zero;
-
-        this.gameObject.name = "Player"+ (MultiPlayerGamePlayManager.instance.playerCounts + 1);
     }
 
     public void SetAvatarProfile(AvatarProfile p)
     {
         playerName = p.avatarName;
-        Debug.LogError("playerName = " + playerName);
         if (avatarName != null)
         {
-            avatarName.text = playerName;// p.avatarName;
+            avatarName.text = p.avatarName;
             avatarName.GetComponent<EllipsisText>().UpdateText();
         }
         if (avatarImage != null)
@@ -145,29 +82,44 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         timerImage.fillAmount -= 0.1f / totalTimer;
         if (timerImage.fillAmount <= 0)
         {
-            //if (MultiPlayerGamePlayManager.instance.IsDeckArrow)
+            //if (choosingColor)
             //{
-            //    Debug.LogError(" 11111 11 1111 ");
-            //    MultiPlayerGamePlayManager.instance.OnDeckClick();
+            //    if (isUserPlayer)
+            //    {
+            //        MultiPlayerGamePlayManager.instance.colorChoose.HidePopup();
+            //    }
+            //    ChooseBestColor();
             //}
-            //else if (cardsPanel.AllowedCard.Count > 0)
+            if (MultiPlayerGamePlayManager.instance.IsDeckArrow)
+            {
+                MultiPlayerGamePlayManager.instance.OnDeckClick();
+            }
+            else if (cardsPanel.AllowedCard.Count > 0)
+            {
+                isUserClicked = false;
+                OnCardClick(FindBestPutCard());
+            }
+            //else if (cardsPanel.AllowOddCards.Count > 0)
             //{
-            //    Debug.LogError(" 2222 2222 22 22  ");
             //    isUserClicked = false;
-            //    OnCardClick(FindBestPutCard());
+            //    OnCardClick(GetBestOddCard());
             //}
-            //else
+            //else if (cardsPanel.AllowEvenCards.Count > 0)
             //{
-                //Debug.LogError(" 3333 33 33 33 3  ");
-                OnTurnEnd();
+            //    isUserClicked = false;
+            //    OnCardClick(GetBestEvenCard());
             //}
+            else
+            {
+                OnTurnEnd();
+            }
         }
     }
 
     int oddEvenCount = 0;
     public void OnTurn()
     {
-        Debug.LogError("OnTurn() ... playerName = " + gameObject.name);
+        Debug.Log("OnTurn() ... playerName = " + gameObject.name);
         unoClicked = false;
         pickFromDeck = false;
         Timer = true;
@@ -176,46 +128,46 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         if (MultiPlayerGamePlayManager.instance.isEven || MultiPlayerGamePlayManager.instance.isOdd)
         {
             MultiPlayerGamePlayManager.instance.turnCount++;
-            if (MultiPlayerGamePlayManager.instance.turnCount > 1)//(GameMaster.instance.multiPlayerNum - 1))
+            if (MultiPlayerGamePlayManager.instance.turnCount > 3)
             {
                 MultiPlayerGamePlayManager.instance.isEven = false;
                 MultiPlayerGamePlayManager.instance.isOdd = false;
                 MultiPlayerGamePlayManager.instance.turnCount = 0;
             }
+            //Debug.LogError("turnCount = "+ MultiPlayerGamePlayManager.instance.turnCount);
+            //Debug.LogError("MultiPlayerGamePlayManager.instance.isEven = " + MultiPlayerGamePlayManager.instance.isEven + "  & MultiPlayerGamePlayManager.instance.isOdd = " + MultiPlayerGamePlayManager.instance.isOdd);
         }
         if (!MultiPlayerGamePlayManager.instance.isEven && !MultiPlayerGamePlayManager.instance.isOdd)
         {
             GetDoubleCard();
         }
+
         if (isUserPlayer)
         {
             MultiPlayerGamePlayManager.instance.roundsCount++;
-            //Debug.LogError("isUserPlayer = "+ isUserPlayer);
+            Debug.Log("isUserPlayer = " + isUserPlayer);
             if ((MultiPlayerGamePlayManager.instance.isEven && cardsPanel.AllowEvenCards.Count < 1) || (MultiPlayerGamePlayManager.instance.isOdd && cardsPanel.AllowOddCards.Count < 1))
             {
-                if(MultiPlayerGamePlayManager.instance.oddEvenCount < 1)
+                if (MultiPlayerGamePlayManager.instance.oddEvenCount < 1)
                 {
                     MultiPlayerGamePlayManager.instance.EnableDeckClick();
                     MultiPlayerGamePlayManager.instance.EnableCardDeck();
-                }                
+                }
             }
             UpdateCardColor();
             if (MultiPlayerGamePlayManager.instance.roundsCount >= 2)   //(cardsPanel.AllowedCard.Count == 0)
             {
                 MultiPlayerGamePlayManager.instance.EnableUnoBtn();
             }
-            isComputerTurn = false;
         }
         else
         {
-            isComputerTurn = true;
-            //StartCoroutine(DoComputerTurn());
-            Debug.LogError("!isUserPlayer  gameObj.name = " + gameObject.name);
+            StartCoroutine(DoComputerTurn());
         }
     }
 
     public void UpdateCardColor()
-    {       
+    {
         if (isUserPlayer)
         {
             foreach (var item in cardsPanel.cards)
@@ -225,7 +177,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             }
             if (MultiPlayerGamePlayManager.instance.isEven)
             {
-                //Debug.LogError("Even Num = "+ MultiPlayerGamePlayManager.instance.isEven);
+                Debug.LogError("Even Num = " + MultiPlayerGamePlayManager.instance.isEven);
                 foreach (var item in cardsPanel.AllowEvenCards)
                 {
                     item.SetGaryColor(false);
@@ -243,7 +195,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             }
             else if (MultiPlayerGamePlayManager.instance.isOdd)
             {
-                //Debug.LogError("Odd Num = " + MultiPlayerGamePlayManager.instance.isOdd);
+                Debug.LogError("Odd Num = " + MultiPlayerGamePlayManager.instance.isOdd);
                 foreach (var item in cardsPanel.AllowOddCards)
                 {
                     item.SetGaryColor(false);
@@ -264,6 +216,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                 //Debug.LogError("UpdateCardColor()    isDoubleCards = " + isDoubleCards + "  & isSequentialCards = " + isSequentialCards);
                 foreach (var item in cardsPanel.AllowDoubleCards)
                 {
+                    //Debug.LogError("item = "+ item.name);
                     //item.SetGaryColor(false);
                     item.IsClickable = true;
                     //item.SetCardsPos(false);
@@ -319,6 +272,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
 
     public void AddCard(Card c)
     {
+        //Debug.Log("AddCard " + c.name+ "  "+this.gameObject.name);
         cardsPanel.cards.Add(c);
         c.transform.SetParent(cardsPanel.transform);
         if (isUserPlayer)
@@ -339,14 +293,17 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     int count = 0;
     public void OnCardClick(Card c)
     {
-        if (c == null) {
+        Debug.Log("OnCardClick " + gameObject.name + "  " + c.name);
+        if (c == null)
+        {
             isUserClicked = false;
         }
         if (Timer)
         {
+            //Debug.LogError("isDoubleCards = " + isDoubleCards + "  &  = isSequentialCards = " + isSequentialCards);
             if (isUserPlayer && (isDoubleCards || isSequentialCards))
             {
-                //Debug.LogError("c.IsDouble = " + c.IsDouble);              
+                Debug.LogError("c.IsDouble = " + c.IsDouble);
                 if (!c.IsDouble && !c.isSequential)
                 {
                     isDoubleCards = false;
@@ -357,13 +314,28 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                 else if (c.isSequential)
                 {
                     isDoubleCards = false;
-                    //Debug.LogError("isSequentialCards = " + isSequentialCards);
+                    Debug.LogError("isSequentialCards = " + isSequentialCards);
                     foreach (var items in cardsPanel.cards)
                     {
-                        if(items.isSequential)
+                        if (items.isSequential)
                         {
+                            //if (wild2 && c.Type != CardType.Other)
+                            //{
+                            //    if(items.Type != CardType.Other)
+                            //    {
+                            //        items.IsClickable = false;
+                            //        items.IsDouble = false;
+                            //    }
+                            //    else
+                            //    {
+                            //        items.IsClickable = true;
+                            //    }
+                            //}
+                            //else
+                            //{
                             items.IsClickable = true;
-                        }                        
+                            //}                            
+                        }
                         else
                         {
                             items.IsDouble = false;
@@ -372,13 +344,15 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                     }
                     MultiPlayerGamePlayManager.instance.PutCardToWastePile(c, this);
                 }
-                else 
+                else
                 {
+                    Debug.LogError("isDoubleCards = " + isDoubleCards);
                     isSequentialCards = false;
                     foreach (var item in cardsPanel.cards)
                     {
                         if (item.IsDouble && (RemoveSpecialCases(c.name) == RemoveSpecialCases(item.name)))
                         {
+                            Debug.LogError("c.name = " + c.name + "  & RemoveSpecialCases(item.name) = " + RemoveSpecialCases(item.name));
                             item.IsClickable = true;
                         }
                         else
@@ -393,11 +367,12 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                 if (isSequentialCards)
                 {
                     count++;
+                    Debug.LogError("count = " + count);
                     if (count > 2)
                     {
                         isSequentialCards = false;
                         count = 0;
-                    }                    
+                    }
                 }
                 else
                 {
@@ -409,10 +384,12 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                     }
                 }
             }
-            else if(isUserPlayer && (MultiPlayerGamePlayManager.instance.isEven || MultiPlayerGamePlayManager.instance.isOdd))
+            else if (isUserPlayer && (MultiPlayerGamePlayManager.instance.isEven || MultiPlayerGamePlayManager.instance.isOdd))
             {
+                Debug.LogError("c.name = " + c.name);
                 if (MultiPlayerGamePlayManager.instance.isEven)
                 {
+                    Debug.LogError(" c.name = " + c.name + " & MultiPlayerGamePlayManager.instance.isEven = " + MultiPlayerGamePlayManager.instance.isEven);
                     if (GetBestEvenCard_WithDouble(c.name))
                     {
                         isOddEvenDoubles = true;
@@ -427,16 +404,16 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                     {
                         isOddEvenDoubles = false;
                     }
+                    Debug.LogError("isOddEvenDoubles = " + isOddEvenDoubles);
                     MultiPlayerGamePlayManager.instance.PutCardToWastePile(c, this);
-                    if(!isOddEvenDoubles)
-                    {
+                    if (!isOddEvenDoubles)
                         OnTurnEnd();
-                    }
 
                     return;
                 }
                 else if (MultiPlayerGamePlayManager.instance.isOdd)
                 {
+                    Debug.LogError(" c.name = " + c.name + "   & MultiPlayerGamePlayManager.instance.isOdd = " + MultiPlayerGamePlayManager.instance.isOdd);
                     if (GetBestOddCard_WithDouble(c.name))
                     {
                         isOddEvenDoubles = true;
@@ -451,11 +428,10 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                     {
                         isOddEvenDoubles = false;
                     }
+                    Debug.LogError("isOddEvenDoubles = " + isOddEvenDoubles);
                     MultiPlayerGamePlayManager.instance.PutCardToWastePile(c, this);
                     if (!isOddEvenDoubles)
-                    {
                         OnTurnEnd();
-                    }
 
                     return;
                 }
@@ -468,12 +444,13 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             }
             else
             {
+                //Debug.LogError("xDDDDDDDDD  isDoubleCards = " + isDoubleCards + "  &  = isSequentialCards = " + isSequentialCards);
                 MultiPlayerGamePlayManager.instance.PutCardToWastePile(c, this);
-                if(isDoubleCards || isSequentialCards)
+                if (isDoubleCards || isSequentialCards)
                 {
                     return;
                 }
-                else if(isOddEvenDoubles)
+                else if (isOddEvenDoubles)
                 {
                     return;
                 }
@@ -481,12 +458,15 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                 {
                     OnTurnEnd();
                 }
+                //if (!isDoubleCards || !isSequentialCards)
+                //    OnTurnEnd();
             }
         }
     }
 
     public void OnCardAdd(Card c)
     {
+        Debug.Log("OnCardAdd " + c.name);
         if (Timer)
         {
             MultiPlayerGamePlayManager.instance.PutCardToWastePile(c, this);
@@ -496,62 +476,23 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
 
     public void OnTurnEnd()
     {
-        Debug.LogError("OnTurnEnd() ...  playerName = " + gameObject.name);
+        Debug.Log("OnTurnEnd");
         if (!choosingColor) Timer = false;
         cardsPanel.UpdatePos();
         foreach (var item in cardsPanel.cards)
-        {            
-            if(isUserPlayer)
+        {
+            //item.SetCardsPos(false);
+            if (isUserPlayer)
             {
                 StartCoroutine(item.SetCardsPos(true, 0f));
-            }            
+            }
             item.SetGaryColor(false);
         }
         GetTotalPoints();
+        //GetListOfValues();
+        //GetDoubleCard();
+
         MultiPlayerGamePlayManager.instance.oddEvenCount = 0;
-        //MultiPlayerGamePlayManager.instance.isclicking = false;
-        Invoke("CallNextTurnRPC", 2);
-    }
-
-    void CallNextTurnRPC()
-    {
-        photonView.RPC("RPCSendAndNextTurn", RpcTarget.All);
-    }
-
-    [PunRPC]
-    void RPCSendAndNextTurn()
-    {
-        //Debug.LogError("RPCSendAndNextTurn 0", gameObject);
-        if (PhotonNetwork.IsMasterClient)
-        {
-            //Debug.LogError("RPCSendAndNextTurn on" + this.gameObject.name, gameObject);
-            MultiPlayerGamePlayManager.instance.SetNextPlayer();
-        }
-    }
-
-    public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
-    {
-        string nextplayerTurnNickName = (string)propertiesThatChanged["nextturn"];
-        //Debug.LogError("OnRoomPropertiesUpdate nextplayerTurnNickName = " +
-        //    nextplayerTurnNickName + "   objName = " + this.gameObject.name, gameObject);
-        //Debug.LogError(PhotonNetwork.CurrentRoom.ToStringFull());
-        Timer = (photonView.Owner.NickName == nextplayerTurnNickName);
-
-        if (!photonView.IsMine) return;
-        if (photonView.Owner.NickName == nextplayerTurnNickName)
-        {
-            //Debug.LogError("Myturn .. .. . ");
-            OnTurn();
-        }
-        else
-        {
-            //Debug.LogError("Not Myturn .. .. .");
-        }
-
-        if ((nextplayerTurnNickName == null) && photonView.IsMine && PhotonNetwork.IsMasterClient)
-        {
-            OnTurn();
-        }
     }
 
     public void ShowMessage(string message, bool playStarParticle = false)
@@ -588,6 +529,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     {
         bool unoClick = false;
         float unoPossibality = MultiPlayerGamePlayManager.instance.UnoProbability / 100f;
+        //Debug.LogError("unoPossibality = " + unoPossibality);
 
         if (Random.value < unoPossibality && GetTotalPoints() <= 10)  //cardsPanel.cards.Count == 2)
         {
@@ -598,12 +540,21 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             yield return null;
         }
 
+        //if (p.GetTotalPoints() <= 10 && !CurrentPlayer.isUserPlayer)   //(p.cardsPanel.cards.Count == 0)
+        //{
+        //    Debug.LogError("GetTotalPoints() = " + p.GetTotalPoints());
+        //    Invoke("SetupGameOver", 2f);
+        //    return;
+        //}
+
         yield return new WaitForSeconds(Random.Range(1f, totalTimer * (unoClick ? unoCoef : unoCoef * 2)));
+        //Debug.LogError("MultiPlayerGamePlayManager.instance.isEven = "+ MultiPlayerGamePlayManager.instance.isEven + "  & MultiPlayerGamePlayManager.instance.isOdd = " + MultiPlayerGamePlayManager.instance.isOdd);
+        //Debug.LogError("isSequentialCards = " + isSequentialCards + " &  isDoubleCards = " + isDoubleCards);
         if (MultiPlayerGamePlayManager.instance.isEven)
         {
             OnCardClick(GetBestEvenCard());
         }
-        else if(MultiPlayerGamePlayManager.instance.isOdd)
+        else if (MultiPlayerGamePlayManager.instance.isOdd)
         {
             OnCardClick(GetBestOddCard());
         }
@@ -613,6 +564,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             int sum = doublelist.OrderByDescending(x => x).Take(2).Sum();
             int sum1 = seqCardList.OrderByDescending(x => x).Take(3).Sum();
 
+            Debug.LogError("sum = " + sum + "  & sum1 = " + sum1);
             if (sum1 > sum)
             {
                 isDoubleCards = false;
@@ -646,6 +598,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         }
         else if (isDoubleCards)
         {
+            //Debug.LogError("isDoubleCards = " + isDoubleCards);
             for (int i = 0; i < indexList.Count; i++)
             {
                 if (i < 2)
@@ -656,12 +609,13 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                     }
                     OnCardClick(PutCard());
                 }
-            }            
+            }
         }
         else if (isSequentialCards)
         {
+            //Debug.LogError("isSequentialCards = " + isSequentialCards);
             for (int i = 0; i < sequentialList.Count; i++)
-            {                
+            {
                 if (i < 3)
                 {
                     //Debug.LogError("sequentialList[] = " + sequentialList[i]);
@@ -672,7 +626,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                     OnCardClick(PutBestSequentialCard());
                 }
             }
-        }        
+        }
         else
         {
             OnCardClick(FindBestPutCard());
@@ -681,7 +635,9 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
 
     public string RemoveSpecialCases(string cardName)
     {
+        //Debug.LogError("cardName = " + cardName);
         string[] str = cardName.Split('_');
+        //Debug.LogError("str[1] = " + str[1]);
         return str[1];
     }
 
@@ -690,20 +646,23 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         List<Card> evenNum = cardsPanel.AllowEvenCards;
         if (evenNum.Count <= 1)
             return false;
-        for(int i = 0; i < evenNum.Count; i++)
+        for (int i = 0; i < evenNum.Count; i++)
         {
-            if(evenNum[i].name == evenCardName)
+            if (evenNum[i].name == evenCardName)
             {
+                Debug.LogError(" iiiii evenCardName = " + evenCardName);
                 evenNum.Remove(evenNum[i]);
             }
         }
-        
+
         if (evenNum.Count > 0)
         {
+            Debug.LogError("evenCardName = " + evenCardName);
             for (int i = 0; i < evenNum.Count; i++)
             {
                 if (RemoveSpecialCases(evenNum[i].name) == RemoveSpecialCases(evenCardName))
                 {
+                    Debug.LogError("evenCardName = " + evenCardName + "   RemoveSpecialCases(evenOdd_Num[i].name) &  = " + RemoveSpecialCases(evenNum[i].name));
                     evenNum[i].IsClickable = true;
                     return true;
                 }
@@ -724,16 +683,19 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         {
             if (oddNum[i].name == oddCardName)
             {
+                Debug.LogError(" iiiii oddCardName = " + oddCardName);
                 oddNum.Remove(oddNum[i]);
             }
         }
 
         if (oddNum.Count > 0)
         {
+            Debug.LogError("oddCardName = " + oddCardName);
             for (int i = 0; i < oddNum.Count; i++)
             {
                 if (RemoveSpecialCases(oddNum[i].name) == RemoveSpecialCases(oddCardName))
                 {
+                    Debug.LogError("oddCardName = " + oddCardName + "   RemoveSpecialCases(evenOdd_Num[i].name) &  = " + RemoveSpecialCases(oddNum[i].name));
                     oddNum[i].IsClickable = true;
                     return true;
                 }
@@ -745,7 +707,39 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         }
         return false;
     }
-    
+
+    //public bool GetBestOddEvenCard_WithDouble(string evenCardName, bool isEven, bool isOdd)
+    //{
+    //    List<Card> evenOdd_Num = new List<Card>();
+    //    Debug.LogError("isEven = " + isEven + "   isOdd = " + isOdd);
+    //    if (isEven) {
+    //        evenOdd_Num = cardsPanel.AllowEvenCards;
+    //    } else if(isOdd) {
+    //        evenOdd_Num = cardsPanel.AllowOddCards;
+    //    }
+    //    if (evenOdd_Num.Count < 0)
+    //        return false;
+
+    //    if (evenOdd_Num.Count > 1)
+    //    {
+    //        Debug.LogError("evenCardName = " + evenCardName);
+    //        for (int i = 0; i < evenOdd_Num.Count; i++)
+    //        {
+    //            if(RemoveSpecialCases(evenOdd_Num[i].name) == RemoveSpecialCases(evenCardName))
+    //            {
+    //                Debug.LogError("evenCardName = " + evenCardName + "   RemoveSpecialCases(evenOdd_Num[i].name) &  = " + RemoveSpecialCases(evenOdd_Num[i].name));
+    //                evenOdd_Num[i].IsClickable = true;
+    //                return true;
+    //            }
+    //            else
+    //            {
+    //                evenOdd_Num[i].IsClickable = false;
+    //            }
+    //        }
+    //    }
+    //    return false;
+    //}
+
     public Card FindBestPutCard()
     {
         List<Card> allow = cardsPanel.AllowedCard;
@@ -788,9 +782,10 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                     cardName.Add(type + "_" + NumericToString(sequenceNum[i][j].ToString()));
                 }
             }
-            
+
             if (sequentialNum.Count > 1)
-            {          
+            {
+                //Debug.LogError("Before  counter = " + counter + "   sequentialNum.Count = " + sequentialNum.Count);                
                 if (sequentialNum.Count < 3)
                 {
                     //Debug.LogError(" sequentialNum.Count < 3  = " + sequentialNum.Count);
@@ -810,9 +805,9 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                             if (counter < 1)
                             {
                                 isSequentialCards = false;
-                            }                       
+                            }
                         }
-                    }                    
+                    }
                 }
                 else
                 {
@@ -821,11 +816,13 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             }
             else
             {
+                //Debug.LogError("   sequentialNum.Count = " + sequentialNum.Count);
                 if (counter < 1)
                 {
                     isSequentialCards = false;
-                }                    
+                }
             }
+            //Debug.LogError("isSequentialCards = " + isSequentialCards);
             if (isSequentialCards)
             {
                 for (int i = 0; i < sequentialNum.Count; i++)
@@ -835,6 +832,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                 }
                 //wild1 = false;
             }
+            //Debug.LogError(" with 1 wild card isSequentialCards = " + isSequentialCards + " &  After counter = " + counter);
         }
         else
         {
@@ -850,7 +848,8 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                         NumCards.Add(allCards[i]);
                     }
                 }
-                if(!isUserPlayer) {
+                if (!isUserPlayer)
+                {
                     NumCards.Sort((x, y) => y.point.CompareTo(x.point));
                 }
                 for (int i = 0; i < NumCards.Count; i++)
@@ -874,6 +873,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             {
                 isSequentialCards = false;
             }
+            //Debug.LogError("wild2 = " + wild2 + "   isSequentialCards = " + isSequentialCards);
             if (wild2)
             {
                 isSequentialCards = true;
@@ -884,10 +884,12 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                 }
                 //wild2 = false;
             }
-            else if(wild1)
+            else if (wild1)
             {
                 isSequentialCards = true;
             }
+
+            ////Debug.LogError(" with 2 wild card    isSequentialCards = " + isSequentialCards);
         }
 
         if (!isSequentialCards)
@@ -895,13 +897,15 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             return;
         }
 
-        for(int i = 0; i < seqCardNames.Count; i++)
+        for (int i = 0; i < seqCardNames.Count; i++)
         {
-            for(int j = 0; j < cardsPanel.cards.Count; j++)
+            for (int j = 0; j < cardsPanel.cards.Count; j++)
             {
+                //Debug.LogError("sadge  cardName[i] = " + cardName[i]);
                 if (seqCardNames[i] == cardsPanel.cards[j].name)
                 {
-                    //Debug.LogError("cardsPanel.cards[j].name = " + cardsPanel.cards[j].name);
+                    //Debug.LogError("cardName[i] = " + cardName[i]);
+                    Debug.LogError("cardsPanel.cards[j].name = " + cardsPanel.cards[j].name);
                     sequentialList.Add(cardsPanel.cards.IndexOf(cardsPanel.cards[j]));
                 }
             }
@@ -909,7 +913,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
 
         for (int i = 0; i < sequentialList.Count; i++)
         {
-            //Debug.LogError("sequentialList[i] = "+ sequentialList[i]);
+            Debug.LogError("sequentialList[i] = " + sequentialList[i]);
             cardsPanel.cards[sequentialList[i]].isSequential = true;
         }
     }
@@ -975,7 +979,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         {
             isSequentialCards = false;
         }
-
+        Debug.LogError("wild2 = " + wild2 + "   isSequentialCards = " + isSequentialCards);
         if (wild2)
         {
             isSequentialCards = true;
@@ -991,7 +995,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             isSequentialCards = true;
         }
 
-        //Debug.LogError(" with 2 wild card    isSequentialCards = " + isSequentialCards);
+        Debug.LogError(" with 2 wild card    isSequentialCards = " + isSequentialCards);
 
         if (!isSequentialCards)
         {
@@ -1002,9 +1006,11 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         {
             for (int j = 0; j < cardsPanel.cards.Count; j++)
             {
+                //Debug.LogError("sadge  cardName[i] = " + cardName[i]);
                 if (seqCardNames[i] == cardsPanel.cards[j].name)
                 {
-                    //Debug.LogError("cardsPanel.cards[j].name = " + cardsPanel.cards[j].name);
+                    //Debug.LogError("cardName[i] = " + cardName[i]);
+                    Debug.LogError("cardsPanel.cards[j].name = " + cardsPanel.cards[j].name);
                     sequentialList.Add(cardsPanel.cards.IndexOf(cardsPanel.cards[j]));
                 }
             }
@@ -1012,7 +1018,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
 
         for (int i = 0; i < sequentialList.Count; i++)
         {
-            //Debug.LogError("sequentialList[i] = " + sequentialList[i]);
+            Debug.LogError("sequentialList[i] = " + sequentialList[i]);
             cardsPanel.cards[sequentialList[i]].isSequential = true;
         }
     }
@@ -1083,7 +1089,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             if (cardName == oddNum[i].name)
             {
                 dubOddCards.Add(oddNum[i]);
-                //Debug.LogError("oddNum[i].name = " + oddNum[i].name);
+                Debug.LogError("oddNum[i].name = " + oddNum[i].name);
             }
         }
         return oddNum[0];
@@ -1096,17 +1102,17 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             return null;
 
         evenNum.Sort((x, y) => y.point.CompareTo(x.point));
-        if(evenNum[0].point <= 1)
+        if (evenNum[0].point <= 1)
             return null;
 
         string cardName = evenNum[0].name;
         List<Card> dubEvenCards = new List<Card>();
-        for(int i = 1; i< evenNum.Count; i++)
+        for (int i = 1; i < evenNum.Count; i++)
         {
-            if(cardName == evenNum[i].name)
+            if (cardName == evenNum[i].name)
             {
                 dubEvenCards.Add(evenNum[i]);
-                //Debug.LogError("evenNum[i].name = "+ evenNum[i].name);
+                Debug.LogError("evenNum[i].name = " + evenNum[i].name);
             }
         }
         return evenNum[0];
@@ -1117,7 +1123,8 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
 
     public void GetDoubleCard()
     {
-        if(MultiPlayerGamePlayManager.instance.isEven || MultiPlayerGamePlayManager.instance.isEven)
+        Debug.Log("AI " + gameObject.name);
+        if (MultiPlayerGamePlayManager.instance.isEven || MultiPlayerGamePlayManager.instance.isEven)
         {
             return;
         }
@@ -1143,7 +1150,8 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
 
         indexList = new List<int>();
         doublelist = new List<int>();
-        sameColorCardsList = new List<int>();        
+        sameColorCardsList = new List<int>();
+        //Debug.LogError("GetDoubleCard() ... .. . Player Name = "+ gameObject.name);                       
 
         List<Card> allows = cardsPanel.AllowedCard;
         var zippedLists = allows.Zip(Enumerable.Range(0, allows.Count), (s, i) => new { s.Type, i });
@@ -1163,9 +1171,9 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                     sameColorCardsList = new List<int>();//item.result.list;
                     for (int i = 0; i < cardsPanel.cards.Count; i++)
                     {
-                        if(cardsPanel.cards[i].Type == item.key)
+                        if (cardsPanel.cards[i].Type == item.key)
                         {
-                            if(cardsPanel.cards[i].cardValue > 0)
+                            if (cardsPanel.cards[i].cardValue > 0)
                                 sameColorCardsList.Add(cardsPanel.cards[i].cardValue);
 
                             //Debug.LogError("cardsPanel.cards[i].cardValue = " + cardsPanel.cards[i].cardValue);
@@ -1181,7 +1189,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         }
 
         wild1 = false;
-        wild2 = false;        
+        wild2 = false;
 
         var zippedList = cardVal.Zip(Enumerable.Range(0, cardVal.Count), (s, i) => new { s, i });
         var finalResult = from a in zippedList
@@ -1189,18 +1197,18 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                           select new { key = g.Key, result = new { list = g.Select(o => o.i).ToList(), count = g.Count() } };
         foreach (var item in finalResult)
         {
-            if(item.result.count > 1 && item.result.count <= 3 && item.key > 0)
+            if (item.result.count > 1 && item.result.count <= 3 && item.key > 0)
             {
                 //Debug.LogError("item.key = " + item.key);
                 //Debug.LogError("item.result.count = " + item.result.count);
-                
+
                 List<int> list = item.result.list;
                 for (int i = 0; i < list.Count; i++)
                 {
                     doublelist.Add(item.key);
 
                     cardsPanel.cards[list[i]].IsDouble = true;
-                    //Debug.LogError("list[i] = " + list[i]);
+                    ////Debug.LogError("list[i] = " + list[i]);
                     if (list.Count > 2)
                     {
                         if (list[0] == list[2])
@@ -1226,6 +1234,29 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         List<Card> allows = cardsPanel.AllowedCard;
         if (CheckWildCount() >= 1)
         {
+            //var zippedLists = allows.Zip(Enumerable.Range(0, allows.Count), (s, i) => new { s.Type, i });
+            //var finalResults = from a in zippedLists
+            //                    group a by a.Type into g
+            //                    select new { key = g.Key, result = new { list = g.Select(o => o.i).ToList(), count = g.Count() } };
+
+            //foreach (var item in finalResults)
+            //{
+            //    if (item.key != CardType.Other)
+            //    {
+            //        if (item.result.count > 1)
+            //        {
+            //            Debug.LogError("xDD  item.key = " + item.key);
+            //            Debug.LogError("xDD  item.result.count = " + item.result.count);
+
+            //            sameColorCardsList = new List<int>();
+            //            for (int i = 0; i < cardsPanel.cards.Count; i++)
+            //            {
+            //                if (cardsPanel.cards[i].Type == item.key)
+            //                {
+            //                    sameColorCardsList.Add(cardsPanel.cards[i].cardValue);
+            //                }
+            //            }
+
             if (list.Count > 1)
             {
                 MissingNum(sameColorCardsList, type);
@@ -1249,9 +1280,31 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                     }
                 }
             }
+            //        }
+            //    }
+            //}
+            //if (isUnSequence)
+            //{
+            //    for (int i = 0; i < wildCards.Count; i++)
+            //    {
+            //        if (i < 2)
+            //        {
+            //            wildCards[i].isSequential = true;
+            //            seqCardList.Add(wildCards[i].point);
+            //            seqCardNames.Add(wildCards[i].name);
+            //            isSequentialCards = true;
+            //            count++;
+            //        }
+            //        else
+            //        {
+            //            if(count < 1)
+            //                isSequentialCards = false;
+            //        }                    
+            //    }
+            //}
         }
         //Debug.LogError("CheckUnSeqCardsWithWild() isSequentialCards = "+ isSequentialCards);
-        if(!isSequentialCards)
+        if (!isSequentialCards)
         {
             return;
         }
@@ -1260,9 +1313,11 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         {
             for (int j = 0; j < cardsPanel.cards.Count; j++)
             {
+                //Debug.LogError("sadge  cardName[i] = " + cardName[i]);
                 if (seqCardNames[i] == cardsPanel.cards[j].name)
                 {
-                    //Debug.LogError("cardsPanel.cards[j].name = " + cardsPanel.cards[j].name);
+                    //Debug.LogError("cardName[i] = " + cardName[i]);
+                    Debug.LogError("cardsPanel.cards[j].name = " + cardsPanel.cards[j].name);
                     sequentialList.Add(cardsPanel.cards.IndexOf(cardsPanel.cards[j]));
                 }
             }
@@ -1286,9 +1341,12 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         for (int i = 0; i < myList.Count; i++)
         {
             a = myList[i];
-            if (i < myList.Count - 1) {
+            if (i < myList.Count - 1)
+            {
                 b = myList[i + 1];
-            } else {
+            }
+            else
+            {
                 break;
             }
 
@@ -1296,7 +1354,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             remaining = myList2.Except(myList).ToList();
             if (remaining.Count == 1)
             {
-                //Debug.LogError("First Remaing Num = " + remaining[0]);
+                Debug.LogError("First Remaing Num = " + remaining[0]);
                 seqCardList.Add(a);
                 seqCardNames.Add(type + "_" + NumericToString(a.ToString()));
                 seqCardList.Add(b);
@@ -1305,11 +1363,11 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                 unseqCount++;
             }
         }
-        if(unseqCount < 1)
+        if (unseqCount < 1)
         {
             isUnSequence = false;
         }
-        //Debug.LogError("MissingNum()    isUnSequence   = " + isUnSequence);
+        Debug.LogError("MissingNum()    isUnSequence   = " + isUnSequence);
     }
 
     public Card PutCard()
@@ -1328,8 +1386,9 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
 
         if (sum < tempList.Max())
         {
+            //Debug.LogError("double sum = "+ sum + "  & tempList.Max() = " + tempList.Max());
             isDoubleCards = false;
-            OnCardClick(FindBestPutCard());            
+            OnCardClick(FindBestPutCard());
             return null;
         }
         else
@@ -1342,6 +1401,11 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     {
         List<Card> doubleAllow = cardsPanel.AllowSequentialCards;
         doubleAllow.Sort((x, y) => y.point.CompareTo(x.point));
+        //for (int i = 0; i < doubleAllow.Count; i++)
+        //{
+        //    Debug.LogError("doubleAllow[" + i + "] = " + doubleAllow[i]);
+        //}
+        //Debug.LogError("doubleAllow[" + 0 + "] = " + doubleAllow[0]);
         return doubleAllow[0];
     }
 
@@ -1377,24 +1441,28 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                 MultiPlayerGamePlayManager.instance.SelectColor(Random.Range(1, 5));
         }
     }
-        
+
     public void GetListOfValues()
-    {        
+    {
         cardVal = new List<int>();
         for (int i = 0; i < cardsPanel.cards.Count; i++)
         {
             //if (cardsPanel.cards[i].Type != CardType.Other)
             //{
-                cardVal.Add(cardsPanel.cards[i].cardValue);
-                //indexList.Add(i);
+            cardVal.Add(cardsPanel.cards[i].cardValue);
+            //indexList.Add(i);
             //}
         }
+        //foreach(var items in cardsPanel.cards)
+        //{
+        //    Debug.LogError("item.name = "+ items.name);
+        //}
     }
 
     public int GetTotalPoints()
     {
         int total = 0;
-        foreach(var c in cardsPanel.cards)
+        foreach (var c in cardsPanel.cards)
         {
             total += c.point;
         }
@@ -1441,24 +1509,5 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
                 break;
         }
         return name;
-    }
-
-    private void SmoothMovement()
-    {
-        transform.position = Vector3.Lerp(transform.position, smoothMove, Time.deltaTime * 10);
-    }
-
-    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
-    {
-        if (stream.IsWriting)
-        {
-            stream.SendNext(transform.position);
-            stream.SendNext(Timer);
-        }
-        else if (stream.IsReading)
-        {
-            smoothMove = (Vector3)stream.ReceiveNext();
-            Timer = (bool)stream.ReceiveNext();
-        }
     }
 }
