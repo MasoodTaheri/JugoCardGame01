@@ -10,12 +10,17 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
+using Hashtable = ExitGames.Client.Photon.Hashtable;
 
-public class PunPlayer : MonoBehaviour
+public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstantiateMagicCallback
 {
     public PhotonView PV;
+    public int Actornumber;
+    //public int posinscene;
     public GameObject CardPanelBG;
+    //public GameObject PlayerBG;
     public PlayerCards cardsPanel;
+    public GameObject Avatar;
     public string playerName;
     public bool isUserPlayer, isUserClicked;
     public Image avatarImage;
@@ -37,11 +42,56 @@ public class PunPlayer : MonoBehaviour
 
     public bool isDoubleCards, isSequentialCards, isOddEvenDoubles;
 
-    void Start()
+    private void Awake()
     {
         PV = GetComponent<PhotonView>();
-        Timer = false;
+        isUserPlayer = PV.IsMine;
     }
+
+    void Start()
+    {
+        transform.SetParent(
+    MultiPlayerGamePlayManager.instance.gameObject.transform, false);
+
+        Timer = false;
+        Debug.Log(PV.Owner.ActorNumber);
+        Actornumber = PV.Owner.ActorNumber;
+
+        CardPanelBG.transform.SetParent(MultiPlayerGamePlayManager.instance.PlayerBg[Actornumber - 1].transform);
+        RectTransform parentRect = MultiPlayerGamePlayManager.instance.PlayerBg[Actornumber - 1].GetComponent<RectTransform>();
+        CardPanelBG.GetComponent<RectTransform>().anchorMin = new Vector2(0.5f, 0.5f);
+        CardPanelBG.GetComponent<RectTransform>().anchorMax = new Vector2(0.5f, 0.5f);
+        CardPanelBG.GetComponent<RectTransform>().pivot = new Vector2(0.5f, 0.5f);
+
+        CardPanelBG.GetComponent<RectTransform>().localPosition = Vector3.zero;
+        CardPanelBG.GetComponent<RectTransform>().sizeDelta = parentRect.sizeDelta;
+
+        CardPanelBG.GetComponent<RectTransform>().localEulerAngles = Vector3.zero;
+
+
+        Avatar.transform.SetParent(MultiPlayerGamePlayManager.instance.Avatars[Actornumber - 1].transform);
+        Avatar.GetComponent<RectTransform>().localPosition = Vector3.zero;
+        cardsPanel.maxSpace = (PV.IsMine) ? 70 : 40;
+        MultiPlayerGamePlayManager.instance.players[Actornumber - 1] = this;
+        MultiPlayerGamePlayManager.instance.PlayerSharedDatas[Actornumber - 1].PhotonName = PV.Owner.NickName;
+
+    }
+
+    //private void Update()
+    //{
+    //    if (Input.GetKeyUp(KeyCode.Q))
+    //        CardPanelBG.GetComponent<RectTransform>().eulerAngles = Vector3.zero;
+
+    //    if (Input.GetKeyUp(KeyCode.W))
+    //        CardPanelBG.GetComponent<RectTransform>().rotation = Quaternion.Euler(Vector3.zero);
+
+    //    if (Input.GetKeyUp(KeyCode.E))
+    //        CardPanelBG.transform.eulerAngles = Vector3.zero;
+
+    //    if (Input.GetKeyUp(KeyCode.R))
+    //        CardPanelBG.GetComponent<RectTransform>().localEulerAngles = Vector3.zero;
+
+    //}
 
     public void SetAvatarProfile(AvatarProfile p)
     {
@@ -1510,4 +1560,61 @@ public class PunPlayer : MonoBehaviour
         }
         return name;
     }
+
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    {
+        //throw new NotImplementedException();
+    }
+
+    public void OnPhotonInstantiate(PhotonMessageInfo info)
+    {
+        //throw new NotImplementedException();
+    }
+
+    public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
+    {
+        string propertiesKey = PV.Owner.NickName;
+        //Dictionary<string, string> propertiesValue;
+
+        if (propertiesThatChanged.ContainsKey(propertiesKey))
+        {
+            //propertiesValue = (Dictionary<string, string>)propertiesThatChanged[propertiesKey];
+
+            //foreach (KeyValuePair<string, string> pair in propertiesValue)
+            //{
+            Debug.Log("punplayer OnRoomPropertiesUpdate key=" + propertiesKey +
+        "value=" + (string)propertiesThatChanged[propertiesKey]);
+            MultiPlayerGamePlayManager.instance.PlayerSharedDatas[PV.Owner.ActorNumber - 1].CardsString
+                = (string)propertiesThatChanged[propertiesKey];
+            //}
+
+        }
+        //for (int i = 0; i < PlayerSharedDatas.Count; i++)
+        //{
+        //    string str1 = Launcher.instance.GetRoomCustomProperty(PlayerSharedDatas[i].PhotonName);
+
+        //    if ((str1 != null) && (PlayerSharedDatas[i].PhotonName != ""))
+        //    {
+        //        Debug.Log(PlayerSharedDatas[i].PhotonName + "=" + str1);
+        //        //PlayerSharedDatas[i].CardsString = str1;
+        //    }
+        //}
+        //if (propertiesThatChanged.ContainsKey(propertiesKey))
+        //{
+        //    if (propertiesThatChanged[propertiesKey] == null)
+        //    {
+        //        propertiesValue = new Dictionary<int, float>();
+        //        return;
+        //    }
+
+        //    propertiesValue = (Dictionary<int, float>)propertiesThatChanged[propertiesKey];
+
+        //    foreach (KeyValuePair<int, float> pair in propertiesValue)
+        //    {
+        //        SetBlockHeightRemote(pair.Key, pair.Value);
+        //    }
+        //}
+    }
+
+
 }

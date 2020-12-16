@@ -94,6 +94,6 @@ public class Waitforallplayers : MonoBehaviourPunCallbacks
             //StartGameData.gameObject.SetActive(false);
         }
 
-        Debug.Log("WaitForStartIE");
+        //Debug.Log("WaitForStartIE");
     }
 }

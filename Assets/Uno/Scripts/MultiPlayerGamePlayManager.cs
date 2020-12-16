@@ -16,6 +16,11 @@ public class PlayerDatas
     public PhotonView pv;
     public string CardsString;
 }
+public class Table
+{
+
+}
+
 public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakingCallbacks
 {
     [Header("Sound")]
@@ -46,7 +51,7 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
     public GameObject menuButton;
 
     [Header("Player Setting")]
-    public List<PunPlayer> players;
+    public PunPlayer[] players;
     public TextAsset multiplayerNames;
     public TextAsset computerProfiles;
     public bool clockwiseTurn = true;
@@ -76,7 +81,8 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
 
 
     public List<PlayerDatas> PlayerSharedDatas;
-
+    public List<GameObject> PlayerBg;
+    public List<GameObject> Avatars;
 
 
 
@@ -114,6 +120,10 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
     {
         instance = this;
         Input.multiTouchEnabled = false;
+        players = new PunPlayer[PhotonNetwork.CurrentRoom.PlayerCount];
+        GameObject go = PhotonNetwork.Instantiate("Player", Vector3.zero, Quaternion.identity);
+
+
         //if (GameManager.currentGameMode == GameMode.Computer)
         //{
         //    SetTotalPlayer(4);
@@ -126,14 +136,13 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         //}
         //playerChoose.HidePopup(false);
         int i = PhotonNetwork.CurrentRoom.PlayerCount;
-        Debug.Log("PlayerCount=" + i);
         PlayerSharedDatas = new List<PlayerDatas>();
         for (int j = 0; j < i; j++)
         {
             PlayerDatas pd = new PlayerDatas();
             PlayerSharedDatas.Add(pd);
-
         }
+
         StartCoroutine(StartMultiPlayerGameMode(i));
     }
 
@@ -182,7 +191,7 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         DisableCardDeck();
         cardWastePile.gameObject.SetActive(true);
         unoBtn.SetActive(true);
-        if (totalPlayer == 2)
+      /*  if (totalPlayer == 2)
         {
             players[0].gameObject.SetActive(true);
             players[0].CardPanelBG.SetActive(true);
@@ -190,6 +199,8 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
             players[2].CardPanelBG.SetActive(true);
             players.RemoveAt(3);
             players.RemoveAt(1);
+
+
 
         }
         else if (totalPlayer == 3)
@@ -210,13 +221,13 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
                 players[i].gameObject.SetActive(true);
                 players[i].CardPanelBG.SetActive(true);
             }
-        }
+        }*/
     }
 
     void SetupGame()
     {
         menuButton.SetActive(true);
-        currentPlayerIndex = Random.Range(0, players.Count);
+        currentPlayerIndex = Random.Range(0, players.Length);
         players[0].SetAvatarProfile(GameManager.PlayerAvatarProfile);
 
         //if (GameManager.currentGameMode == GameMode.MultiPlayer)
@@ -224,7 +235,7 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         string[] nameList = multiplayerNames.text.Split('\n');
         List<int> indexes = new List<int>();
 
-        for (int i = 1; i < players.Count; i++)
+        for (int i = 1; i < players.Length; i++)
         {
             while (true)
             {
@@ -252,17 +263,14 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         //}
 
         CreateDeck();
-        GetallplayerAroundTable
-        GameObject Go = PhotonNetwork.Instantiate("PvController", Vector3.zero, Quaternion.identity);
-        //Debug.Log(PhotonNetwork.)
-            //Go.GetComponent<PunPlayerRefs>().
-        if (!PhotonNetwork.IsMasterClient)
-            return;
+
+        if (PhotonNetwork.IsMasterClient)
+        {
+            cards.Shuffle();
+            StartCoroutine(DealCards(NumOfCardsToPlay));
+        }
 
 
-     
-        cards.Shuffle();
-        StartCoroutine(DealCards(NumOfCardsToPlay));
     }
 
     void CreateDeck()
@@ -307,8 +315,9 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         yield return new WaitForSeconds(1f);
         for (int t = 0; t < total; t++)
         {
-            for (int i = 0; i < players.Count; i++)
+            for (int i = 0; i < players.Length; i++)
             {
+                //Debug.Log("DealCards to player" + i);
                 PickCardFromDeck(players[i]);
                 yield return new WaitForSeconds(cardDealTime);
             }
@@ -324,12 +333,31 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         //PutCardToWastePile(cards[a]);
         //cards.RemoveAt(a);
 
-        for (int i = 0; i < players.Count; i++)
+        for (int i = 0; i < players.Length; i++)
         {
             players[i].cardsPanel.UpdatePos();
         }
 
         setup = true;
+        Debug.Log("Dealing cards is completed");
+
+        for (int i = 0; i < PlayerSharedDatas.Count; i++)
+        {
+            Launcher.instance.SetRoomCustomProperty(
+                Launcher.instance.PlayersInRoom[i],
+                PlayerSharedDatas[i].CardsString);
+        }
+        Launcher.instance.RaseEvent(Launcher.PhotonEvent_DealCardCompleted);
+        //PunPlayerRefs[] p = GameObject.FindObjectsOfType<PunPlayerRefs>();
+        //Debug.Log("DealCards PunPlayerRefs count=" + p.Length);
+        //foreach (var item in p)
+        //{
+        //    Debug.Log(item.gameObject, item.gameObject);
+        //    //if (item.PhotonViewOf == null)
+        //    item.Findplayer();
+        //}
+        //Debug.Log(PhotonNetwork.CurrentRoom.ToStringFull());
+
         //CurrentPlayer.OnTurn();
         Debug.Log("CurrentPlayer.OnTurn();");
     }
@@ -368,7 +396,11 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
             }
         }
         Card temp = cards[0];
-        //PlayerSharedDatas
+
+        //Debug.Log(p.id + " " + temp.name);
+        PlayerSharedDatas[p.Actornumber-1].CardsString += temp.name + ",";
+
+
         p.AddCard(cards[0]);
         cards[0].IsOpen = p.isUserPlayer;
         if (updatePos)
@@ -553,7 +585,7 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         if (gameOver) yield break;
 
         List<int> indexes = new List<int>();
-        for (int i = 1; i < players.Count; i++)
+        for (int i = 1; i < players.Length; i++)
         {
             indexes.Add(i);
         }
@@ -593,7 +625,7 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         int step = clockwiseTurn ? 1 : -1;
         do
         {
-            currentPlayerIndex = Mod(currentPlayerIndex + step, players.Count);
+            currentPlayerIndex = Mod(currentPlayerIndex + step, players.Length);
         } while (!players[currentPlayerIndex].isInRoom);
     }
 
@@ -723,78 +755,80 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
 
     public void SetupGameOver()
     {
-        gameOver = true;
-        for (int i = players.Count - 1; i >= 0; i--)
-        {
-            if (!players[i].isInRoom)
-            {
-                players.RemoveAt(i);
-            }
-        }
+        new System.NotImplementedException();
+        return;
+        //gameOver = true;
+        //for (int i = players.Length - 1; i >= 0; i--)
+        //{
+        //    if (!players[i].isInRoom)
+        //    {
+        //        players.RemoveAt(i);
+        //    }
+        //}
 
-        if (players.Count == 2)
-        {
-            playerObject[0].SetActive(true);
-            playerObject[2].SetActive(true);
-            playerObject[2].transform.GetChild(2).GetComponent<Text>().text = "2nd Place";
-            playerObject.RemoveAt(3);
-            playerObject.RemoveAt(1);
+        //if (players.Count == 2)
+        //{
+        //    playerObject[0].SetActive(true);
+        //    playerObject[2].SetActive(true);
+        //    playerObject[2].transform.GetChild(2).GetComponent<Text>().text = "2nd Place";
+        //    playerObject.RemoveAt(3);
+        //    playerObject.RemoveAt(1);
 
-        }
-        else if (players.Count == 3)
-        {
-            playerObject.RemoveAt(2);
-            for (int i = 0; i < 3; i++)
-            {
-                playerObject[i].SetActive(true);
-            }
-            playerObject[2].transform.GetChild(2).GetComponent<Text>().text = "3rd Place";
+        //}
+        //else if (players.Count == 3)
+        //{
+        //    playerObject.RemoveAt(2);
+        //    for (int i = 0; i < 3; i++)
+        //    {
+        //        playerObject[i].SetActive(true);
+        //    }
+        //    playerObject[2].transform.GetChild(2).GetComponent<Text>().text = "3rd Place";
 
-        }
-        else
-        {
-            for (int i = 0; i < 4; i++)
-            {
-                playerObject[i].SetActive(true);
-            }
-        }
+        //}
+        //else
+        //{
+        //    for (int i = 0; i < 4; i++)
+        //    {
+        //        playerObject[i].SetActive(true);
+        //    }
+        //}
 
-        players.Sort((x, y) => x.GetTotalPoints().CompareTo(y.GetTotalPoints()));
-        var winner = players[0];
+        //players.Sort((x, y) => x.GetTotalPoints().CompareTo(y.GetTotalPoints()));
+        //var winner = players[0];
 
-        starParticle.gameObject.SetActive(winner.isUserPlayer);
-        playerObject[0].GetComponentsInChildren<Image>()[1].sprite = winner.avatarImage.sprite;
+        //starParticle.gameObject.SetActive(winner.isUserPlayer);
+        //playerObject[0].GetComponentsInChildren<Image>()[1].sprite = winner.avatarImage.sprite;
 
-        for (int i = 0; i < playerObject.Count; i++)
-        {
-            var playerNameText = playerObject[i].GetComponentInChildren<Text>();
-            playerNameText.text = players[i].playerName;
-            playerNameText.GetComponent<EllipsisText>().UpdateText();
-            playerObject[i].GetComponentsInChildren<Image>()[1].sprite = players[i].avatarImage.sprite;
-        }
+        //for (int i = 0; i < playerObject.Count; i++)
+        //{
+        //    var playerNameText = playerObject[i].GetComponentInChildren<Text>();
+        //    playerNameText.text = players[i].playerName;
+        //    playerNameText.GetComponent<EllipsisText>().UpdateText();
+        //    playerObject[i].GetComponentsInChildren<Image>()[1].sprite = players[i].avatarImage.sprite;
+        //}
 
-        for (int i = 0; i < playerPoints.Count; i++)
-        {
-            playerPoints[i].text = players[i].GetTotalPoints().ToString();
-        }
+        //for (int i = 0; i < playerPoints.Count; i++)
+        //{
+        //    playerPoints[i].text = players[i].GetTotalPoints().ToString();
+        //}
 
-        GameManager.PlaySound(winner.isUserPlayer ? music_win_clip : music_loss_clip);
-        gameOverPopup.SetActive(true);
+        //GameManager.PlaySound(winner.isUserPlayer ? music_win_clip : music_loss_clip);
+        //gameOverPopup.SetActive(true);
 
-        for (int i = 1; i < players.Count; i++)
-        {
-            if (players[i].isUserPlayer)
-            {
-                loseTimerAnimation.SetActive(true);
-                loseTimerAnimation.transform.position = playerObject[i].transform.position;
-                break;
-            }
-        }
+        //for (int i = 1; i < players.Length; i++)
+        //{
+        //    if (players[i].isUserPlayer)
+        //    {
+        //        loseTimerAnimation.SetActive(true);
+        //        loseTimerAnimation.transform.position = playerObject[i].transform.position;
+        //        break;
+        //    }
+        //}
 
-        gameOverPopup.GetComponent<Animator>().enabled = winner.isUserPlayer;
-        gameOverPopup.GetComponentInChildren<Text>().text = winner.isUserPlayer ? "You win Game." : "You Lost Game ...   Try Again.";
-        fastForwardTime = 0;
-        Time.timeScale = 0;
+        //gameOverPopup.GetComponent<Animator>().enabled = winner.isUserPlayer;
+        //gameOverPopup.GetComponentInChildren<Text>().text = winner.isUserPlayer ? "You win Game." : "You Lost Game ...   Try Again.";
+        //fastForwardTime = 0;
+        //Time.timeScale = 0;
     }
 
     IEnumerator CheckNetwork()
@@ -858,6 +892,23 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         }
         Time.timeScale = 1f;
         rayCastBlocker.SetActive(false);
+
+    }
+
+
+    public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
+    {
+        //for (int i = 0; i < PlayerSharedDatas.Count; i++)
+        //{
+        //    string str1 = Launcher.instance.GetRoomCustomProperty(PlayerSharedDatas[i].PhotonName);
+
+        //    if ((str1 != null) && (PlayerSharedDatas[i].PhotonName != ""))
+        //    {
+        //        Debug.Log(PlayerSharedDatas[i].PhotonName + "=" + str1);
+        //        //PlayerSharedDatas[i].CardsString = str1;
+        //    }
+        //}
+        //propertiesThatChanged.ContainsKey(propertiesKey)
 
     }
 }

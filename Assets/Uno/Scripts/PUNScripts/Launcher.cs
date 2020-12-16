@@ -32,6 +32,7 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
     public const byte PhotonEvent_StartGame = 1;
     public const byte PhotonEvent_EndGame = 2;
     public const byte PhotonEvent_LeaveMatch = 3;
+    public const byte PhotonEvent_DealCardCompleted = 4;
     void Awake()
     {
         instance = this;
@@ -111,7 +112,7 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
 
     public override void OnJoinRandomFailed(short returnCode, string message)
     {
-        Debug.Log("OnJoinRandomFailed " + returnCode + "  " + message);
+        //Debug.Log("OnJoinRandomFailed " + returnCode + "  " + message);
         byte maxPlayersPerRoom = 5;
         PhotonNetwork.CreateRoom(null, new RoomOptions { MaxPlayers = maxPlayersPerRoom });
     }
@@ -364,7 +365,9 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
 
     public string GetRoomCustomProperty(string key)
     {
+        if (string.IsNullOrEmpty(key)) return "";
         //Debug.Log(PhotonNetwork.CurrentRoom.ToStringFull());
+        //Debug.Log("GetRoomCustomProperty key=" + key);
         if (PhotonNetwork.CurrentRoom.CustomProperties.ContainsKey(key))
         {
             string value = PhotonNetwork.CurrentRoom.CustomProperties[key].ToString();
@@ -392,7 +395,7 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
     public void FillPlayersInRoom()
     {
         string str = GetRoomCustomProperty("PlayersInRoom");
-        Debug.Log("FillPlayersInRoom " + str);
+        //Debug.Log("FillPlayersInRoom " + str);
         string[] str2 = str.Split(',');
         PlayersInRoom.Clear();
         foreach (var item in str2)
@@ -401,9 +404,13 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
 
     public void SetRoomCustomProperty(string key, string Value)
     {
+        if ((string.IsNullOrEmpty(key)) || (string.IsNullOrEmpty(Value)))
+            return;
         Hashtable props = new Hashtable { { key, Value } };
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
-        Debug.Log(PhotonNetwork.CurrentRoom.ToStringFull());
+        Debug.Log("SetRoomCustomProperty key=" + key
+            + "  value=" + Value + " \n" + PhotonNetwork.CurrentRoom.ToStringFull());
+        //Debug.Log();
     }
 
 
@@ -423,6 +430,7 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
         RaiseEventOptions raiseEventOptions = new RaiseEventOptions { Receivers = ReceiverGroup.All }; // You would have to set the Receivers to All in order to receive this event on the local client as well
         //PhotonNetwork.RaiseEvent(Code, content, raiseEventOptions, SendOptions.SendReliable);
         PhotonNetwork.RaiseEvent(Code, null, raiseEventOptions, SendOptions.SendReliable);
+        Debug.Log("RaseEvent " + Code.ToString());
     }
 
     public void OnEvent(EventData photonEvent)
@@ -460,7 +468,28 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
             Debug.Log("OnEvent  PhotonEvent_LeaveMatch");
             PhotonNetwork.LeaveRoom();
         }
-        
+        if (eventCode == PhotonEvent_DealCardCompleted)
+        {
+            Debug.Log("OnEvent  PhotonEvent_DealCardCompleted");
+            ////if (players[0].PV == null)
+            //foreach (var item in GameObject.FindObjectsOfType<PunPlayerRefs>())
+            //{
+            //    Debug.Log("OnRoomPropertiesUpdate Findplayer", item);
+            //    item.Findplayer();
+
+            //}
+            ////if (PlayerSharedDatas[0].PhotonName == "")
+            //{
+            //    foreach (var item in GameObject.FindObjectsOfType<PunPlayerRefs>())
+            //    {
+            //        MultiPlayerGamePlayManager.instance.
+            //                            PlayerSharedDatas[item.PhotonViewOf.id].PhotonName = item.pv.Owner.NickName;
+            //        MultiPlayerGamePlayManager.instance.
+            //        PlayerSharedDatas[item.PhotonViewOf.id].pv = item.pv;
+            //    }
+            //}
+        }
+
     }
 
 
