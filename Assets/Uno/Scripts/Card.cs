@@ -106,6 +106,7 @@ public class Card : MonoBehaviourPun, IPunObservable, IPointerClickHandler
 
     public void SetTargetPosAndRot(Vector3 pos, float rotZ)
     {
+        //return;
         if (LeanTween.isTweening(gameObject))
             LeanTween.cancel(gameObject);
 

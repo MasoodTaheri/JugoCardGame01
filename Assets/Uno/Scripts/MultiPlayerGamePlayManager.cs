@@ -7,6 +7,8 @@ using ExitGames.Client.Photon;
 using Photon.Realtime;
 using Photon.Pun.UtilityScripts;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
+using Random = UnityEngine.Random;
+using System;
 
 [System.Serializable]
 public class PlayerDatas
@@ -66,8 +68,8 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
     public List<Text> playerPoints;
     public GameObject loseTimerAnimation;
 
-    private List<Card> cards;
-    private List<Card> wasteCards;
+    public List<Card> cards;
+    public List<Card> wasteCards;
 
     public bool isOdd, isEven;
 
@@ -191,37 +193,37 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         DisableCardDeck();
         cardWastePile.gameObject.SetActive(true);
         unoBtn.SetActive(true);
-      /*  if (totalPlayer == 2)
-        {
-            players[0].gameObject.SetActive(true);
-            players[0].CardPanelBG.SetActive(true);
-            players[2].gameObject.SetActive(true);
-            players[2].CardPanelBG.SetActive(true);
-            players.RemoveAt(3);
-            players.RemoveAt(1);
+        /*  if (totalPlayer == 2)
+          {
+              players[0].gameObject.SetActive(true);
+              players[0].CardPanelBG.SetActive(true);
+              players[2].gameObject.SetActive(true);
+              players[2].CardPanelBG.SetActive(true);
+              players.RemoveAt(3);
+              players.RemoveAt(1);
 
 
 
-        }
-        else if (totalPlayer == 3)
-        {
-            for (int i = 0; i < 3; i++)
-            {
-                players[i].gameObject.SetActive(true);
-                players[i].CardPanelBG.SetActive(true);
-            }
-            players[3].CardPanelBG.SetActive(true);
-            players.RemoveAt(3);
+          }
+          else if (totalPlayer == 3)
+          {
+              for (int i = 0; i < 3; i++)
+              {
+                  players[i].gameObject.SetActive(true);
+                  players[i].CardPanelBG.SetActive(true);
+              }
+              players[3].CardPanelBG.SetActive(true);
+              players.RemoveAt(3);
 
-        }
-        else
-        {
-            for (int i = 0; i < 4; i++)
-            {
-                players[i].gameObject.SetActive(true);
-                players[i].CardPanelBG.SetActive(true);
-            }
-        }*/
+          }
+          else
+          {
+              for (int i = 0; i < 4; i++)
+              {
+                  players[i].gameObject.SetActive(true);
+                  players[i].CardPanelBG.SetActive(true);
+              }
+          }*/
     }
 
     void SetupGame()
@@ -262,43 +264,93 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         //    }
         //}
 
-        CreateDeck();
 
+        CreateDeck();
+        StartCoroutine(Setup2());
+
+
+        //if (PhotonNetwork.IsMasterClient)
+        //{
+        //    cards.Shuffle();
+        //    StartCoroutine(DealCards(NumOfCardsToPlay));
+        //}
+
+
+    }
+
+    IEnumerator Setup2()
+    {
         if (PhotonNetwork.IsMasterClient)
         {
-            cards.Shuffle();
-            StartCoroutine(DealCards(NumOfCardsToPlay));
+            generateAndShuffleCards();
+            Launcher.instance.SetRoomCustomProperty(
+             "cardsid", Launcher.instance.ListToString(cardsId));
         }
+        yield return new WaitForSeconds(1.5f);
+        if (PhotonNetwork.IsMasterClient)
+            Launcher.instance.RaseEvent(Launcher.PhotonEvent_SyncDeck);// call SyncCards on all clients
+
+        yield return new WaitForSeconds(1.5f);
+        CurrentPlayer.OnTurn();
+    }
 
 
+    public List<string> cardsId;
+    public void generateAndShuffleCards()
+    {
+        //= new List<string>();
+        for (int i = 0; i < 55; i++)
+            cardsId.Add(i.ToString());
+        cardsId.Shuffle();
+
+    }
+
+    public void SyncCards(string cardsList)//called in event PhotonEvent_SyncDeck
+    {
+        Debug.Log("SyncCards " + cardsList);
+        List<Card> oldcards = new List<Card>();
+        foreach (var item in cards)
+            oldcards.Add(item);
+
+        string[] cardshaveShuffled = cardsList.Split(',');
+        Card temp1;
+        for (int i = 0; i < cardshaveShuffled.Length; i++)
+        {
+            int newid = Convert.ToInt32(cardshaveShuffled[i]);
+            temp1 = oldcards[newid];
+            cards[i] = temp1;
+            //Debug.Log(newid + " copied to" + i);
+        }
+        StartCoroutine(DealCards(NumOfCardsToPlay));
     }
 
     void CreateDeck()
     {
         cards = new List<Card>();
         wasteCards = new List<Card>();
+        int k = -1;
         for (int j = 1; j <= 4; j++)
         {
-            cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Wild));
-            cards.Add(CreateCardOnDeck(CardType.Other, CardValue.DrawTwo));
-            cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Ego));
+            cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Wild, k++));
+            cards.Add(CreateCardOnDeck(CardType.Other, CardValue.DrawTwo, k++));
+            cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Ego, k++));
             if (j <= 2)
             {
-                cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Odd));
-                cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Even));
+                cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Odd, k++));
+                cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Even, k++));
             }
         }
         for (int i = 0; i <= 9; i++)
         {
             for (int j = 1; j <= 4; j++)
             {
-                cards.Add(CreateCardOnDeck((CardType)j, (CardValue)i));
+                cards.Add(CreateCardOnDeck((CardType)j, (CardValue)i, k++));
                 // cards.Add(CreateCardOnDeck((CardType)j, (CardValue)i));
             }
         }
     }
 
-    Card CreateCardOnDeck(CardType t, CardValue v)
+    Card CreateCardOnDeck(CardType t, CardValue v, int id)
     {
         Card temp = Instantiate(_cardPrefab, cardDeckTransform.position, Quaternion.identity, cardDeckTransform);
         temp.Type = t;
@@ -306,7 +358,7 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         temp.IsOpen = false;
         temp.CalcPoint();
         temp.GetCardValue();
-        temp.name = t.ToString() + "_" + v.ToString();
+        temp.name = id.ToString() + "_" + t.ToString() + "_" + v.ToString();
         return temp;
     }
 
@@ -318,7 +370,8 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
             for (int i = 0; i < players.Length; i++)
             {
                 //Debug.Log("DealCards to player" + i);
-                PickCardFromDeck(players[i]);
+                //PickCardFromDeck(players[i]);
+                PickCardFromDeckInit(players[i]);
                 yield return new WaitForSeconds(cardDealTime);
             }
         }
@@ -333,10 +386,11 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         //PutCardToWastePile(cards[a]);
         //cards.RemoveAt(a);
 
-        for (int i = 0; i < players.Length; i++)
-        {
-            players[i].cardsPanel.UpdatePos();
-        }
+        //for (int i = 0; i < players.Length; i++)
+        //{
+        //    players[i].cardsPanel.UpdatePos();
+        //    yield return new WaitForSeconds(1.5f);
+        //}
 
         setup = true;
         Debug.Log("Dealing cards is completed");
@@ -348,18 +402,45 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
                 PlayerSharedDatas[i].CardsString);
         }
         Launcher.instance.RaseEvent(Launcher.PhotonEvent_DealCardCompleted);
-        //PunPlayerRefs[] p = GameObject.FindObjectsOfType<PunPlayerRefs>();
-        //Debug.Log("DealCards PunPlayerRefs count=" + p.Length);
-        //foreach (var item in p)
-        //{
-        //    Debug.Log(item.gameObject, item.gameObject);
-        //    //if (item.PhotonViewOf == null)
-        //    item.Findplayer();
-        //}
-        //Debug.Log(PhotonNetwork.CurrentRoom.ToStringFull());
 
+        StartCoroutine(animatecards(total));
         //CurrentPlayer.OnTurn();
-        Debug.Log("CurrentPlayer.OnTurn();");
+    }
+
+    public Card PickCardFromDeckInit(PunPlayer p)
+    {
+        Card temp = cards[0];
+        //Debug.Log(p.id + " " + temp.name);
+        PlayerSharedDatas[p.Actornumber - 1].CardsString += temp.name + ",";
+        p.Cards.Add(cards[0]);
+
+        p.AddCard(cards[0]);
+        cards[0].IsOpen = p.isUserPlayer;
+        cards.RemoveAt(0);
+        return temp;
+    }
+    IEnumerator animatecards(int total)
+    {
+        for (int i = 0; i < players.Length; i++)
+        {
+            PunPlayer p = players[i];
+            for (int j = 0; j < total; j++)
+            {
+                p.Cards[j].SetTargetPosAndRot(Vector3.zero, 0f);
+                yield return new WaitForSeconds(cardDealTime);
+            }
+
+            GameManager.PlaySound(throw_card_clip);
+            p.GetTotalPoints();
+
+        }
+        yield return new WaitForSeconds(1);
+
+        for (int i = 0; i < players.Length; i++)
+        {
+            players[i].cardsPanel.UpdatePos();
+            yield return new WaitForSeconds(1.5f);
+        }
     }
 
     IEnumerator DealCardsToPlayer(PunPlayer p, int NoOfCard = 1, float delay = 0f)
@@ -398,8 +479,8 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         Card temp = cards[0];
 
         //Debug.Log(p.id + " " + temp.name);
-        PlayerSharedDatas[p.Actornumber-1].CardsString += temp.name + ",";
-
+        PlayerSharedDatas[p.Actornumber - 1].CardsString += temp.name + ",";
+        p.Cards.Add(cards[0]);
 
         p.AddCard(cards[0]);
         cards[0].IsOpen = p.isUserPlayer;
@@ -415,6 +496,9 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
                             // CurrentPlayer.UpdateCardColor();
         return temp;
     }
+
+
+
 
     public void PutCardToWastePile(Card c, PunPlayer p = null)
     {
@@ -898,6 +982,7 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
 
     public override void OnRoomPropertiesUpdate(Hashtable propertiesThatChanged)
     {
+        //Debug.Log(Launcher.instance.GetRoomCustomProperty("cardsid"));
         //for (int i = 0; i < PlayerSharedDatas.Count; i++)
         //{
         //    string str1 = Launcher.instance.GetRoomCustomProperty(PlayerSharedDatas[i].PhotonName);

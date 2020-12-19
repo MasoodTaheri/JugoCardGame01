@@ -212,6 +212,7 @@ MonoBehaviour:
   timerImage: {fileID: 4585165991794992942}
   timerOjbect: {fileID: 4586873653866486590}
   pointTxt: {fileID: 4585165993256165494}
+  Cards: []
   cardVal: 
   pickFromDeck: 0
   unoClicked: 0

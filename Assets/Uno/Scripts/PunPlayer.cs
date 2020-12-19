@@ -30,7 +30,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     public Image timerImage;
     public GameObject timerOjbect;
     public Text pointTxt;
-
+    public List<Card> Cards;
     public List<int> cardVal;
 
     private float totalTimer = 15f;
@@ -54,11 +54,20 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     MultiPlayerGamePlayManager.instance.gameObject.transform, false);
 
         Timer = false;
-        Debug.Log(PV.Owner.ActorNumber);
+        //Debug.Log(PV.Owner.ActorNumber);
         Actornumber = PV.Owner.ActorNumber;
+        string myname = PhotonNetwork.NickName;
+        int d = -1;
+        foreach (var item in PhotonNetwork.CurrentRoom.Players)
+            if (item.Value.NickName == myname)
+                d = item.Key;
 
-        CardPanelBG.transform.SetParent(MultiPlayerGamePlayManager.instance.PlayerBg[Actornumber - 1].transform);
-        RectTransform parentRect = MultiPlayerGamePlayManager.instance.PlayerBg[Actornumber - 1].GetComponent<RectTransform>();
+        int pos = Mathf.Abs(((Actornumber - d) % PhotonNetwork.CurrentRoom.PlayerCount));
+        Debug.Log("this system is for number" + d);
+        Debug.Log("actorid=" + Actornumber + "  sytemid=" + d + " pos=" + pos);
+
+        CardPanelBG.transform.SetParent(MultiPlayerGamePlayManager.instance.PlayerBg[pos].transform);
+        RectTransform parentRect = MultiPlayerGamePlayManager.instance.PlayerBg[pos].GetComponent<RectTransform>();
         CardPanelBG.GetComponent<RectTransform>().anchorMin = new Vector2(0.5f, 0.5f);
         CardPanelBG.GetComponent<RectTransform>().anchorMax = new Vector2(0.5f, 0.5f);
         CardPanelBG.GetComponent<RectTransform>().pivot = new Vector2(0.5f, 0.5f);
@@ -333,6 +342,8 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         }
     }
 
+
+
     public void RemoveCard(Card c)
     {
         cardsPanel.cards.Remove(c);
@@ -343,6 +354,12 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     int count = 0;
     public void OnCardClick(Card c)
     {
+    //    PV.RPC("RPC_OnCardClick", RpcTarget.All);
+    //}
+
+
+    //public void RPC_OnCardClick(Card c)
+    //{
         Debug.Log("OnCardClick " + gameObject.name + "  " + c.name);
         if (c == null)
         {

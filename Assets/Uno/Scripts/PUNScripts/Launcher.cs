@@ -33,6 +33,9 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
     public const byte PhotonEvent_EndGame = 2;
     public const byte PhotonEvent_LeaveMatch = 3;
     public const byte PhotonEvent_DealCardCompleted = 4;
+    public const byte PhotonEvent_SyncDeck = 5;
+
+
     void Awake()
     {
         instance = this;
@@ -489,9 +492,34 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
             //    }
             //}
         }
-
+        if (eventCode == PhotonEvent_SyncDeck)
+        {
+            Debug.Log("PhotonEvent_SyncDeck");
+            MultiPlayerGamePlayManager.instance.SyncCards(
+                Launcher.instance.GetRoomCustomProperty("cardsid"));
+        }
     }
 
+    public string ListToString(List<string> t)
+    {
+        string str = "";
+        foreach (var item in t)
+        {
+            str += item + ",";
+        }
+        str = str.Remove(str.Length - 1);
+        //Debug.Log("ListToString=" + str);
+        return str;
+    }
+    public void StrToList(string str, out List<string> t)
+    {
+        t = new List<string>();
+        string[] s1 = str.Split(',');
+        foreach (var item in s1)
+        {
+            t.Add(item);
+        }
+    }
 
     //public static Launcher instance;
     //public int numOfPlayer = 0;
