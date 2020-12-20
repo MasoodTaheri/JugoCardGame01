@@ -81,8 +81,8 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         Avatar.transform.SetParent(MultiPlayerGamePlayManager.instance.Avatars[pos].transform);
         Avatar.GetComponent<RectTransform>().localPosition = Vector3.zero;
         cardsPanel.maxSpace = (PV.IsMine) ? 70 : 40;
-        MultiPlayerGamePlayManager.instance.players[pos] = this;
-        MultiPlayerGamePlayManager.instance.PlayerSharedDatas[pos].PhotonName = PV.Owner.NickName;
+        MultiPlayerGamePlayManager.instance.players[Actornumber-1] = this;
+        MultiPlayerGamePlayManager.instance.PlayerSharedDatas[Actornumber-1].PhotonName = PV.Owner.NickName;
 
     }
 
@@ -138,7 +138,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
 
     void UpdateTimer()
     {
-        //return;
+        return;
         Debug.Log("Timer for" +Actornumber+"  "+ PV.Owner.NickName);
         timerImage.fillAmount -= 0.1f / totalTimer;
         if (timerImage.fillAmount <= 0)
