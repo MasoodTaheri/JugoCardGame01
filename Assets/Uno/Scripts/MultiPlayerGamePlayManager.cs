@@ -229,7 +229,7 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
     void SetupGame()
     {
         menuButton.SetActive(true);
-        currentPlayerIndex = Random.Range(0, players.Length);
+        currentPlayerIndex = 0;// Random.Range(0, players.Length);
         players[0].SetAvatarProfile(GameManager.PlayerAvatarProfile);
 
         //if (GameManager.currentGameMode == GameMode.MultiPlayer)
