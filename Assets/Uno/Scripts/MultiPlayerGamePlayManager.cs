@@ -317,9 +317,10 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         for (int i = 0; i < cardshaveShuffled.Length; i++)
         {
             int newid = Convert.ToInt32(cardshaveShuffled[i]);
+            Debug.Log(newid + " copied to" + i);        
             temp1 = oldcards[newid];
             cards[i] = temp1;
-            //Debug.Log(newid + " copied to" + i);
+           
         }
         StartCoroutine(DealCards(NumOfCardsToPlay));
     }
