@@ -33,7 +33,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     public List<Card> Cards;
     public List<int> cardVal;
 
-    private float totalTimer =45f;//15f;
+    private float totalTimer = 45f;//15f;
 
     [HideInInspector]
     public bool pickFromDeck, unoClicked, choosingColor;
@@ -81,8 +81,8 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         Avatar.transform.SetParent(MultiPlayerGamePlayManager.instance.Avatars[pos].transform);
         Avatar.GetComponent<RectTransform>().localPosition = Vector3.zero;
         cardsPanel.maxSpace = (PV.IsMine) ? 70 : 40;
-        MultiPlayerGamePlayManager.instance.players[Actornumber-1] = this;
-        MultiPlayerGamePlayManager.instance.PlayerSharedDatas[Actornumber-1].PhotonName = PV.Owner.NickName;
+        MultiPlayerGamePlayManager.instance.players[Actornumber - 1] = this;
+        MultiPlayerGamePlayManager.instance.PlayerSharedDatas[Actornumber - 1].PhotonName = PV.Owner.NickName;
 
     }
 
@@ -139,7 +139,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     void UpdateTimer()
     {
         return;
-        Debug.Log("Timer for" +Actornumber+"  "+ PV.Owner.NickName);
+        Debug.Log("Timer for" + Actornumber + "  " + PV.Owner.NickName);
         timerImage.fillAmount -= 0.1f / totalTimer;
         if (timerImage.fillAmount <= 0)
         {
@@ -180,7 +180,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     int oddEvenCount = 0;
     public void OnTurn()
     {
-        Debug.Log("OnTurn() ... playerName = " +Actornumber);
+        Debug.Log("OnTurn() ... playerName = " + Actornumber);
         unoClicked = false;
         pickFromDeck = false;
         Timer = true;
@@ -357,12 +357,20 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     public void OnCardClick(Card c)
     {
         Debug.Log("OnCardClick call rpc " + c.name);
-        PV.RPC("RPC_OnCardClick", RpcTarget.All,c.name);
+        PV.RPC("RPC_OnCardClick", RpcTarget.All, c.name);
     }
 
     [PunRPC]
     public void RPC_OnCardClick(string cardName)
     {
+        //Card c = GameObject.Find(cardName).GetComponent<Card>();
+        GameObject obj = GameObject.Find(cardName);
+        if (obj == null)
+            Debug.LogError("Gameobject with the name " + cardName + " not found");
+
+        if (obj.GetComponent<Card>() == null)
+            Debug.LogError("Gameobject with the name " + cardName + " Dose not have a component Card");
+
         Card c = GameObject.Find(cardName).GetComponent<Card>();
         Debug.Log("PunRPC OnCardClick " + gameObject.name + "  " + c.name);
         if (c == null)
