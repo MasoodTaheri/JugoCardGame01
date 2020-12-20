@@ -214,6 +214,7 @@ MonoBehaviour:
   pointTxt: {fileID: 4585165993256165494}
   Cards: []
   cardVal: 
+  PlayerAvatarIndex: -1
   pickFromDeck: 0
   unoClicked: 0
   choosingColor: 0
@@ -246,7 +247,6 @@ MonoBehaviour:
   ObservedComponentsFoldoutOpen: 1
   Group: 0
   prefixField: -1
-  observableSearch: 2
   Synchronization: 3
   OwnershipTransfer: 0
   ObservedComponents:

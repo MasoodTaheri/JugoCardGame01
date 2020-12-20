@@ -32,6 +32,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     public Text pointTxt;
     public List<Card> Cards;
     public List<int> cardVal;
+    public int PlayerAvatarIndex = -1;
 
     private float totalTimer = 45f;//15f;
 
@@ -84,6 +85,19 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         MultiPlayerGamePlayManager.instance.players[Actornumber - 1] = this;
         MultiPlayerGamePlayManager.instance.PlayerSharedDatas[Actornumber - 1].PhotonName = PV.Owner.NickName;
 
+        if (PV.IsMine)
+        {
+            playerName = GameManager.PlayerAvatarName;
+            PlayerAvatarIndex = GameManager.PlayerAvatarIndex;
+            if (avatarName != null)
+            {
+                avatarName.text = GameManager.PlayerAvatarName;
+                avatarName.GetComponent<EllipsisText>().UpdateText();
+            }
+            if (avatarImage != null)
+                avatarImage.sprite = Resources.Load<Sprite>("Avatar/" + GameManager.PlayerAvatarIndex);
+        }
+
     }
 
     //private void Update()
@@ -102,17 +116,17 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
 
     //}
 
-    public void SetAvatarProfile(AvatarProfile p)
-    {
-        playerName = p.avatarName;
-        if (avatarName != null)
-        {
-            avatarName.text = p.avatarName;
-            avatarName.GetComponent<EllipsisText>().UpdateText();
-        }
-        if (avatarImage != null)
-            avatarImage.sprite = Resources.Load<Sprite>("Avatar/" + p.avatarIndex);
-    }
+    //public void SetAvatarProfile(AvatarProfile p)
+    //{
+    //    playerName = p.avatarName;
+    //    if (avatarName != null)
+    //    {
+    //        avatarName.text = p.avatarName;
+    //        avatarName.GetComponent<EllipsisText>().UpdateText();
+    //    }
+    //    if (avatarImage != null)
+    //        avatarImage.sprite = Resources.Load<Sprite>("Avatar/" + p.avatarIndex);
+    //}
 
     public bool Timer
     {
@@ -1598,7 +1612,24 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
-        //throw new NotImplementedException();
+        if (stream.IsWriting)
+        {
+ 
+            stream.SendNext(playerName);
+            stream.SendNext(PlayerAvatarIndex);
+
+        }
+        else
+        {
+            //PlayerLastAnswer.text = (string)stream.ReceiveNext();
+            //lightState = (bool)stream.ReceiveNext();
+            //TurnLight.color = lightState ? Color.green : Color.red;
+            playerName = (string)stream.ReceiveNext();
+            PlayerAvatarIndex=(int)stream.ReceiveNext();
+            avatarName.text = playerName;
+            avatarName.GetComponent<EllipsisText>().UpdateText();
+            avatarImage.sprite = Resources.Load<Sprite>("Avatar/" + PlayerAvatarIndex);
+        }
     }
 
     public void OnPhotonInstantiate(PhotonMessageInfo info)

@@ -230,30 +230,30 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
     {
         menuButton.SetActive(true);
         currentPlayerIndex = 0;// Random.Range(0, players.Length);
-        players[0].SetAvatarProfile(GameManager.PlayerAvatarProfile);
+        //players[0].SetAvatarProfile(GameManager.PlayerAvatarProfile);
 
         //if (GameManager.currentGameMode == GameMode.MultiPlayer)
         //{
-        string[] nameList = multiplayerNames.text.Split('\n');
-        List<int> indexes = new List<int>();
+        //string[] nameList = multiplayerNames.text.Split('\n');
+        //List<int> indexes = new List<int>();
 
-        for (int i = 1; i < players.Length; i++)
-        {
-            while (true)
-            {
-                int index = Random.Range(0, nameList.Length);
-                var name = nameList[index].Trim();
-                if (name.Length == 0) continue;
+        //for (int i = 1; i < players.Length; i++)
+        //{
+        //    while (true)
+        //    {
+        //        int index = Random.Range(0, nameList.Length);
+        //        var name = nameList[index].Trim();
+        //        if (name.Length == 0) continue;
 
-                if (!indexes.Contains(index))
-                {
-                    indexes.Add(index);
-                    if (Random.value < LowercaseNameProbability / 100f) name = name.ToLower();
-                    players[i].SetAvatarProfile(new AvatarProfile { avatarIndex = index % GameManager.TOTAL_AVATAR, avatarName = name });
-                    break;
-                }
-            }
-        }
+        //        if (!indexes.Contains(index))
+        //        {
+        //            indexes.Add(index);
+        //            if (Random.value < LowercaseNameProbability / 100f) name = name.ToLower();
+        //            players[i].SetAvatarProfile(new AvatarProfile { avatarIndex = index % GameManager.TOTAL_AVATAR, avatarName = name });
+        //            break;
+        //        }
+        //    }
+        //}
         //}
         //else
         //{
@@ -317,7 +317,10 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
         for (int i = 0; i < cardshaveShuffled.Length; i++)
         {
             int newid = Convert.ToInt32(cardshaveShuffled[i]);
-            Debug.Log(newid + " copied to" + i);        
+            //Debug.Log(newid + " copied to" + i);
+            if ((newid < 0) || (newid > oldcards.Count))
+                Debug.LogError("newid=" + newid+ "  cardshaveShuffled[i]="+ cardshaveShuffled[i]);
+
             temp1 = oldcards[newid];
             cards[i] = temp1;
            
