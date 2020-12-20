@@ -13,26 +13,25 @@ MonoBehaviour:
   m_Name: PhotonServerSettings
   m_EditorClassIdentifier: 
   AppSettings:
-    AppIdRealtime: bfedf107-11c3-489a-b18b-5a70fb5ebe83
+    AppIdRealtime: f2f5eecc-f4c6-4a76-bf8c-3b937796b55f
     AppIdChat: 
     AppIdVoice: 
     AppVersion: 
     UseNameServer: 1
-    FixedRegion: In
+    FixedRegion: ru
     Server: 
     Port: 0
-    ProxyServer: 
     Protocol: 0
-    EnableProtocolFallback: 1
-    AuthMode: 0
     EnableLobbyStatistics: 0
     NetworkLogging: 1
-  DevRegion: 
+  StartInOfflineMode: 0
   PunLogging: 0
   EnableSupportLogger: 0
   RunInBackground: 1
-  StartInOfflineMode: 0
-  RpcList: []
+  RpcList:
+  - DestroySpaceship
+  - Fire
+  - RespawnSpaceship
+  - RPCSendAndNextTurn
   DisableAutoOpenWizard: 1
   ShowSettings: 1
-  DevRegionSetOnce: 0
