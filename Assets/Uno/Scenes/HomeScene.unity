@@ -3760,7 +3760,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Remain Time = 30s
+  m_Text: 
 --- !u!222 &1056630695
 CanvasRenderer:
   m_ObjectHideFlags: 0

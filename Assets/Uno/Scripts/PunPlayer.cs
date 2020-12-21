@@ -63,10 +63,13 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
             if (item.Value.NickName == myname)
                 d = item.Key;
 
-        int pos = Mathf.Abs(((Actornumber - d) % PhotonNetwork.CurrentRoom.PlayerCount));
+        int pos = ((Actornumber - d) % PhotonNetwork.CurrentRoom.PlayerCount);
+        if (pos < 0)
+            pos = PhotonNetwork.CurrentRoom.PlayerCount + pos;
+        Debug.Log("Pos=" + pos + " Actornumber=" + Actornumber + "    d=" + d
+            + "   PlayerCount=" + PhotonNetwork.CurrentRoom.PlayerCount);
         //Debug.Log("this system is for number" + d);
         //Debug.Log("actorid=" + Actornumber + "  sytemid=" + d + " pos=" + pos);
-
         CardPanelBG.transform.SetParent(MultiPlayerGamePlayManager.instance.PlayerBg[pos].transform);
         RectTransform parentRect = MultiPlayerGamePlayManager.instance.PlayerBg[pos].GetComponent<RectTransform>();
         CardPanelBG.GetComponent<RectTransform>().anchorMin = new Vector2(0.5f, 0.5f);

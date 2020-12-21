@@ -308,6 +308,14 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
     public void SyncCards(string cardsList)//called in event PhotonEvent_SyncDeck
     {
         Debug.Log("SyncCards " + cardsList);
+        StartCoroutine(SyncCardsIE(cardsList));
+    }
+
+    IEnumerator SyncCardsIE(string cardsList)
+    {
+        while (cards.Count < 50)
+            yield return new WaitForSeconds(0.5f);
+
         List<Card> oldcards = new List<Card>();
         foreach (var item in cards)
             oldcards.Add(item);
@@ -319,11 +327,11 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
             int newid = Convert.ToInt32(cardshaveShuffled[i]);
             //Debug.Log(newid + " copied to" + i);
             if ((newid < 0) || (newid > oldcards.Count))
-                Debug.LogError("newid=" + newid+ "  cardshaveShuffled[i]="+ cardshaveShuffled[i]);
+                Debug.LogError("newid=" + newid + "  cardshaveShuffled[i]=" + cardshaveShuffled[i] + "  oldcards.Count=" + oldcards.Count);
 
             temp1 = oldcards[newid];
             cards[i] = temp1;
-           
+
         }
         StartCoroutine(DealCards(NumOfCardsToPlay));
     }

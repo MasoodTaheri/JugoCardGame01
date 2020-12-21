@@ -84,6 +84,7 @@ public class Waitforallplayers : MonoBehaviourPunCallbacks
         }
         else
         {
+            RemainTimeTxt.text = "Wait for start the game";
             //while ((CurrentWaitTime <= MaxWaitTime) && !IsPlayerGenerated)
             //{
             //    yield return new WaitForSeconds(1.0f);
