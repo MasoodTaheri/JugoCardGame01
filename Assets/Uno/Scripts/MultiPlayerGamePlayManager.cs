@@ -332,7 +332,7 @@ public class MultiPlayerGamePlayManager : MonoBehaviourPunCallbacks, IMatchmakin
     {
         cards = new List<Card>();
         wasteCards = new List<Card>();
-        int k = -1;
+        int k = 1;
         for (int j = 1; j <= 4; j++)
         {
             cards.Add(CreateCardOnDeck(CardType.Other, CardValue.Wild, k++));

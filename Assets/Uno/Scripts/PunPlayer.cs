@@ -67,8 +67,8 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         //Debug.Log("this system is for number" + d);
         //Debug.Log("actorid=" + Actornumber + "  sytemid=" + d + " pos=" + pos);
 
-        CardPanelBG.transform.SetParent(MultiPlayerGamePlayManager.instance.PlayerBg[Actornumber - 1].transform);
-        RectTransform parentRect = MultiPlayerGamePlayManager.instance.PlayerBg[Actornumber - 1].GetComponent<RectTransform>();
+        CardPanelBG.transform.SetParent(MultiPlayerGamePlayManager.instance.PlayerBg[pos].transform);
+        RectTransform parentRect = MultiPlayerGamePlayManager.instance.PlayerBg[pos].GetComponent<RectTransform>();
         CardPanelBG.GetComponent<RectTransform>().anchorMin = new Vector2(0.5f, 0.5f);
         CardPanelBG.GetComponent<RectTransform>().anchorMax = new Vector2(0.5f, 0.5f);
         CardPanelBG.GetComponent<RectTransform>().pivot = new Vector2(0.5f, 0.5f);
@@ -79,7 +79,7 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
         CardPanelBG.GetComponent<RectTransform>().localEulerAngles = Vector3.zero;
 
 
-        Avatar.transform.SetParent(MultiPlayerGamePlayManager.instance.Avatars[Actornumber - 1].transform);
+        Avatar.transform.SetParent(MultiPlayerGamePlayManager.instance.Avatars[pos].transform);
         Avatar.GetComponent<RectTransform>().localPosition = Vector3.zero;
         cardsPanel.maxSpace = (PV.IsMine) ? 70 : 40;
         MultiPlayerGamePlayManager.instance.players[Actornumber - 1] = this;
@@ -1614,18 +1614,18 @@ public class PunPlayer : MonoBehaviourPunCallbacks, IPunObservable, IPunInstanti
     {
         if (stream.IsWriting)
         {
- 
+            //Debug.Log("Is Writing", this.gameObject);
             stream.SendNext(playerName);
             stream.SendNext(PlayerAvatarIndex);
-
         }
         else
         {
             //PlayerLastAnswer.text = (string)stream.ReceiveNext();
             //lightState = (bool)stream.ReceiveNext();
             //TurnLight.color = lightState ? Color.green : Color.red;
+            //Debug.Log("Is Reading", this.gameObject);
             playerName = (string)stream.ReceiveNext();
-            PlayerAvatarIndex=(int)stream.ReceiveNext();
+            PlayerAvatarIndex = (int)stream.ReceiveNext();
             avatarName.text = playerName;
             avatarName.GetComponent<EllipsisText>().UpdateText();
             avatarImage.sprite = Resources.Load<Sprite>("Avatar/" + PlayerAvatarIndex);
