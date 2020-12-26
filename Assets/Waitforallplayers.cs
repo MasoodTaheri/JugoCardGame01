@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Photon.Pun;
+using UnityEngine.SceneManagement;
 
 public class Waitforallplayers : MonoBehaviourPunCallbacks
 {
@@ -11,6 +12,8 @@ public class Waitforallplayers : MonoBehaviourPunCallbacks
     public Vector3 RotateVec;
     public Text CurrnetPlayerTxt;
     public Text RemainTimeTxt;
+    public GameObject noPlayersJoined;
+
     //public float RemainTime;
     // Start is called before the first frame update
     void Start()
@@ -55,7 +58,7 @@ public class Waitforallplayers : MonoBehaviourPunCallbacks
         if (PhotonNetwork.IsMasterClient)
         {
 
-            while ((CurrentWaitTime <= MaxWaitTime) &&
+            while ((CurrentWaitTime < MaxWaitTime) &&
                 (PhotonNetwork.CurrentRoom.PlayerCount < PhotonNetwork.CurrentRoom.MaxPlayers))
             {
                 yield return new WaitForSeconds(1.0f);
@@ -78,7 +81,8 @@ public class Waitforallplayers : MonoBehaviourPunCallbacks
             }
             else
             {
-                Launcher.instance.RaseEvent(Launcher.PhotonEvent_LeaveMatch);
+                //Launcher.instance.RaseEvent(Launcher.PhotonEvent_LeaveMatch);
+                StartCoroutine(PlayersNotJoined());
                 Debug.Log("We can't find a room with minimum player");
             }
         }
@@ -96,5 +100,28 @@ public class Waitforallplayers : MonoBehaviourPunCallbacks
         }
 
         //Debug.Log("WaitForStartIE");
+    }
+
+    IEnumerator PlayersNotJoined()
+    {
+        Launcher.instance.mainGameScene.WaittingPanel.HidePopup();
+        noPlayersJoined.SetActive(true);
+        yield return new WaitForSeconds(1.5f);
+        noPlayersJoined.SetActive(false);        
+        Launcher.instance.Disconnect();
+        SceneManager.LoadScene("HomeScene");
+    }
+
+    public void CloseGame()
+    {
+        StartCoroutine(DoSwitchScene());
+    }
+
+    IEnumerator DoSwitchScene()
+    {
+        PhotonNetwork.Disconnect();
+        while (PhotonNetwork.IsConnected)
+            yield return null;
+        SceneManager.LoadScene("HomeScene");
     }
 }

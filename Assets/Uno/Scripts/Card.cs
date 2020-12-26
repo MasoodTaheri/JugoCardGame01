@@ -260,7 +260,7 @@ public class Card : MonoBehaviourPun, IPunObservable, IPointerClickHandler
         }
 
         int value = (int)Value;
-        if (value % 2 == 0) // Get Even Num....... .
+        if (value % 2 == 0 && value != 0) // Get Even Num....... .
         {
             return true;
         }

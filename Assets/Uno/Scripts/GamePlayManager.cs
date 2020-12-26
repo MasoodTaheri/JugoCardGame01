@@ -53,7 +53,7 @@ public class GamePlayManager : MonoBehaviour
     private List<Card> wasteCards;
 
     public bool isOdd, isEven;
-
+    public int playersCount;
     public int turnCount = 0, roundsCount = 0;
 
     public CardType CurrentType
@@ -85,8 +85,10 @@ public class GamePlayManager : MonoBehaviour
     {
         instance = this;
         Input.multiTouchEnabled = false;
+
         if (GameManager.currentGameMode == GameMode.Computer)
         {
+            playersCount = 4;
             SetTotalPlayer(4);
             SetupGame();
         }
@@ -105,6 +107,7 @@ public class GamePlayManager : MonoBehaviour
         {
             i = int.Parse(t.name);
         }
+        playersCount = i;
         StartCoroutine(StartMultiPlayerGameMode(i));
         GameManager.PlayButton();
     }
@@ -462,7 +465,7 @@ public class GamePlayManager : MonoBehaviour
                 //}
                 //else
                 //{
-                //Debug.LogError("CurrentPlayer.isDoubleCards = " + CurrentPlayer.isDoubleCards + "  &  = CurrentPlayer.isSequentialCards = " + CurrentPlayer.isSequentialCards);
+                Debug.LogError("CurrentPlayer.isDoubleCards = " + CurrentPlayer.isDoubleCards + "  &  = CurrentPlayer.isSequentialCards = " + CurrentPlayer.isSequentialCards);
                 //Debug.LogError("CurrentPlayer.isOddEvenDoubles = " + CurrentPlayer.isOddEvenDoubles);
                 if (CurrentPlayer.isDoubleCards)
                 {
@@ -478,13 +481,16 @@ public class GamePlayManager : MonoBehaviour
                 }
                 else    //if (!CurrentPlayer.isDoubleCards && !CurrentPlayer.isSequentialCards)
                 {
-                    //Debug.LogError("CurrentPlayer.isDoubleCards = "+ CurrentPlayer.isDoubleCards + "  &  = CurrentPlayer.isSequentialCards" + CurrentPlayer.isSequentialCards);
+                    Debug.LogError("2222222   CurrentPlayer.isDoubleCards = " + CurrentPlayer.isDoubleCards + "  &  = CurrentPlayer.isSequentialCards" + CurrentPlayer.isSequentialCards);
                     Invoke("NextPlayerTurn", 2f);
                 }
                 //}
 
                 //}
             }
+
+            if(CurrentPlayer.isUserPlayer)
+                GamePlayManager.instance.DisableUnoBtn();
         }
     }
 
@@ -634,6 +640,7 @@ public class GamePlayManager : MonoBehaviour
         if (CurrentPlayer.isUserPlayer)
         {
             oddEvenCount++;
+            turnCount--;
             CurrentPlayer.OnTurn();
             arrowObject.SetActive(false);
             DisableCardDeck();
@@ -649,7 +656,7 @@ public class GamePlayManager : MonoBehaviour
 
     public void DisableUnoBtn()
     {
-        //Debug.LogError("DisableUnoBtn() .... .");
+        Debug.LogError("DisableUnoBtn() .... .");
         unoBtn.GetComponent<Button>().interactable = false;
         unoBtn.GetComponent<Image>().color = Color.gray;
     }
