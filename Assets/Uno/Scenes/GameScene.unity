@@ -5636,7 +5636,7 @@ MonoBehaviour:
   computerProfiles: {fileID: 4900000, guid: d88b4cc1c04c8de43b4f6224a1612089, type: 3}
   clockwiseTurn: 1
   currentPlayerIndex: 0
-  NumOfCardsToPlay: 7
+  NumOfCardsToPlay: 5
   gameOverPopup: {fileID: 808067251}
   starParticle: {fileID: 1787059779}
   playerObject:

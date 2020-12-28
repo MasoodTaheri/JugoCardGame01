@@ -77,7 +77,9 @@ public class GameScene : MonoBehaviour
         {
             CUtils.ShowInterstitialAd();
         });
-        GameManager.PlayButton();  
+        GameManager.PlayButton();
+
+        StartCoroutine(DoSwitchScene());
     }
 
     public void HideExit()
@@ -88,14 +90,7 @@ public class GameScene : MonoBehaviour
 
     public void CloseGame()
     {
-        if (GameManager.currentGameMode == GameMode.Computer)
-        {
-            UnityEngine.SceneManagement.SceneManager.LoadScene("HomeScene");
-        }
-        else
-        {
-            StartCoroutine(DoSwitchScene());
-        }
+        UnityEngine.SceneManagement.SceneManager.LoadScene("HomeScene");
         GamePause(false);
     }
 
@@ -105,6 +100,6 @@ public class GameScene : MonoBehaviour
         PhotonNetwork.Disconnect();
         while (PhotonNetwork.IsConnected)
             yield return null;
-        SceneManager.LoadScene("HomeScene");
+        SceneManager.LoadScene(0);
     }
 }

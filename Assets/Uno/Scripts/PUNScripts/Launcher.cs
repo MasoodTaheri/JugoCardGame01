@@ -7,13 +7,11 @@ using Photon.Realtime;
 using System.Collections.Generic;
 using Hashtable = ExitGames.Client.Photon.Hashtable;
 using ExitGames.Client.Photon;
-using System;
 
 public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEventCallback
 {
-    public static Launcher instance;
-    public MainGameScene mainGameScene;
 
+    public static Launcher instance;
     public string myname;
     public int MinimumPlayerInRoom = 2;
     public GameObject Root;
@@ -23,11 +21,13 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
     public List<string> PlayersInRoom;
     public List<string> RealPlayerInRoom;
     //public int CurrntTurnId;
-    public Popup selectRoom, selectMultiplayer, playerChoose, noNetwork;
+    public Popup selectRoom, playerChoose, noNetwork, WaittingPanel;
+    public GameObject loadingView;
+    public InputField createRoomTF, joinRoomTF;
     public bool isConnecting;
     public int WaitBeforeStartGame;
 
-    public string uniqueCode;
+
 
     public const byte PhotonEvent_StartGame = 1;
     public const byte PhotonEvent_EndGame = 2;
@@ -35,25 +35,13 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
     public const byte PhotonEvent_DealCardCompleted = 4;
     public const byte PhotonEvent_SyncDeck = 5;
 
-    private bool roomJoinFailed;
 
-    private void Awake()
+    void Awake()
     {
-        if (instance == null)
-        {
-            //First run, set the instance
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else if (instance != this)
-        {
-            //Instance is not the same as the one we have, destroy old one, and reset to newest one
-            Destroy(instance.gameObject);
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
+        instance = this;
         PhotonNetwork.AutomaticallySyncScene = true;
-        mainGameScene = FindObjectOfType<MainGameScene>();
+        DontDestroyOnLoad(this.gameObject);
+
     }
 
     public void Connect()
@@ -62,71 +50,23 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
             return;
         Debug.Log("Connecting ....");
         isConnecting = true;
-
-        mainGameScene.loadingView.SetActive(true);
         //Uimanager.instance.OnConnecting();
-        Disconnect();
         PhotonNetwork.GameVersion = "1.0";
         PhotonNetwork.ConnectUsingSettings();
     }
-
     public void MulitplayerBtn()
     {
-        //WaittingPanel.ShowPopup();
-        //WaittingPanel.GetComponent<Waitforallplayers>().CurrnetPlayerTxt.gameObject.SetActive(false);
-        GameManager.PlayButton();
+        WaittingPanel.ShowPopup();
+        WaittingPanel.GetComponent<Waitforallplayers>().CurrnetPlayerTxt.gameObject.SetActive(false);
         Connect();
     }
 
-    public void OnCreateRoomBtn()
-    {
-        mainGameScene.createRPanel.SetActive(true);
-        uniqueCode = GenerateUniqueCode();
-        mainGameScene.createRoomTF.text = uniqueCode;
-        mainGameScene.createRoomTF.enabled = false;
-    }
-
-    public void OnClick_JoinRoom()
-    {
-        if (mainGameScene.joinRoomTF.text.Length >= 2)
-        {
-            PhotonNetwork.JoinRoom(mainGameScene.joinRoomTF.text, null);
-            //joinRPanel.SetActive(false);
-            ////selectRoom.HidePopup();
-            mainGameScene.loadingView.SetActive(true);
-            //ShowWaitingPanel();
-        }
-    }
-
-    public void OnClick_CreateRoom()
-    {
-        if (uniqueCode != null)//(createRoomTF.text.Length >= 2)
-        {            
-            PhotonNetwork.CreateRoom(uniqueCode/*createRoomTF.text*/, new RoomOptions { MaxPlayers = (byte)MinimumPlayerInRoom }, null);
-            mainGameScene.createRPanel.SetActive(false);
-            //selectRoom.HidePopup();
-            mainGameScene.loadingView.SetActive(true);
-            ShowWaitingPanel();
-        }
-    }
-
-    public void ShowWaitingPanel()
-    {
-        mainGameScene.WaittingPanel.ShowPopup();
-        mainGameScene.WaittingPanel.GetComponent<Waitforallplayers>().CurrnetPlayerTxt.gameObject.SetActive(false);
-    }
 
     public void Disconnect()
     {
         PhotonNetwork.Disconnect();
         //Uimanager.instance.DisConnectedTomasterServer();
-    }
 
-    public override void OnJoinedLobby()
-    {
-        //loadingView.SetActive(false);
-        //vsFriendsPanel.SetActive(true);
-        Debug.Log(" OnJoinedLobby() ... . ");
     }
 
     public void JoinRandomRoom()
@@ -149,23 +89,20 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
 
         Debug.Log("JoinPreviousRoom b=" + b);
     }
-
     public override void OnConnectedToMaster()
     {
         Debug.Log("OnConnectedToMaster");
 
         if (isConnecting)
         {
-            string PhotonNickName = PlayerPrefs.GetString("PhotonNickName", "player" + UnityEngine.Random.Range(0, 10000).ToString());
+            string PhotonNickName = PlayerPrefs.GetString("PhotonNickName", "player" + Random.Range(0, 10000).ToString());
 
             if (!PlayerPrefs.HasKey("PhotonNickName"))
                 PlayerPrefs.SetString("PhotonNickName", PhotonNickName);
             PhotonNetwork.NickName = PhotonNickName;
             Debug.Log("I am " + PhotonNickName);
             myname = PhotonNetwork.NickName;
-            mainGameScene.loadingView.SetActive(false);
-            mainGameScene.vsFriendsPanel.SetActive(true);
-            //PhotonNetwork.JoinRandomRoom();//OnJoinedRoom   or OnJoinRandomFailed
+            PhotonNetwork.JoinRandomRoom();//OnJoinedRoom   or OnJoinRandomFailed
         }
         //Uimanager.instance.ConnectedTomasterServer();
     }
@@ -183,22 +120,17 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
         PhotonNetwork.CreateRoom(null, new RoomOptions { MaxPlayers = maxPlayersPerRoom });
     }
 
+
+
     public override void OnDisconnected(DisconnectCause cause)
     {
         isConnecting = false;
-        StartCoroutine(CheckNetwork());
     }
 
     public override void OnJoinedRoom()
     {
-        StartCoroutine(CheckNetwork());
-
         //Debug.Log("OnJoinedRoom " + PhotonNetwork.CurrentRoom.Name);
         ismaster = PhotonNetwork.IsMasterClient;
-
-        mainGameScene.joinRPanel.SetActive(false);
-        ShowWaitingPanel();
-
         //CurrentPlayer.transform.SetParent(Root.transform);
         Debug.Log("OnJoinedRoom " + PhotonNetwork.NickName + "  id=" + PhotonNetwork.LocalPlayer.ActorNumber);
         PlayerPrefs.SetString("RoomName", PhotonNetwork.CurrentRoom.Name);
@@ -210,48 +142,32 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
         //}
         UpdateCardsText();
         GetallplayerAroundTable();
-        
+
         if (GetRoomCustomProperty("GameState") == "Started")
         {
             FillPlayersInRoom();
-            mainGameScene.loadingView.SetActive(false);
             //Uimanager.instance.GeneratePlayer();
         }
         //else
         //Uimanager.instance.WaitForStart();
-        mainGameScene.WaittingPanel.GetComponent<Waitforallplayers>().CurrnetPlayerTxt.gameObject.SetActive(true);
-        mainGameScene.WaittingPanel.GetComponent<Waitforallplayers>().CurrnetPlayerTxt
+        WaittingPanel.GetComponent<Waitforallplayers>().CurrnetPlayerTxt.gameObject.SetActive(true);
+        WaittingPanel.GetComponent<Waitforallplayers>().CurrnetPlayerTxt
             .text = "Current Player In Room =" + PhotonNetwork.CurrentRoom.PlayerCount;
     }
 
+
+
+
+
+
+
     public override void OnPlayerEnteredRoom(Photon.Realtime.Player other)
     {
-        StartCoroutine(CheckNetwork());
         Debug.Log("OnPlayerEnteredRoom() " + other.NickName); // not seen if you're the player connecting
-        mainGameScene.WaittingPanel.GetComponent<Waitforallplayers>().CurrnetPlayerTxt
+        WaittingPanel.GetComponent<Waitforallplayers>().CurrnetPlayerTxt
     .text = "Current Player In Room =" + PhotonNetwork.CurrentRoom.PlayerCount;
         //updatePlayerInRoom();
         UpdateCardsText();
-    }
-
-    public override void OnJoinRoomFailed(short returnCode, string message)
-    {
-        print("RoomFailed " + returnCode + "    Message " + message);
-        //StartCoroutine(CheckNetwork());
-
-        StartCoroutine(RoomJoinedFail());
-    }
-    
-    IEnumerator RoomJoinedFail()
-    {
-        mainGameScene.noRoomPanel.SetActive(true);
-        mainGameScene.failedRoomName.text = "There is no Room with this name: " + mainGameScene.joinRoomTF.text;
-        yield return new WaitForSeconds(2.5f);
-        PhotonNetwork.Disconnect();
-        while (PhotonNetwork.IsConnected)
-            yield return null;
-
-        SceneManager.LoadScene("HomeScene");
     }
 
     public override void OnPlayerLeftRoom(Photon.Realtime.Player other)
@@ -262,7 +178,7 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
         {
             // if player with turn left the room we select next player to play the game
             Debug.LogFormat("OnPlayerLeftRoom IsMasterClient {0}", PhotonNetwork.IsMasterClient); // called before OnPlayerLeftRoom
-            /*string nextturnName = PhotonNetwork.CurrentRoom.CustomProperties["nextturn"].ToString();
+            string nextturnName = PhotonNetwork.CurrentRoom.CustomProperties["nextturn"].ToString();
             if (other.NickName == nextturnName)
             {
                 Debug.Log("player with turn left the room");
@@ -277,11 +193,10 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
                     }
                 //Hashtable props = new Hashtable { { "nextturn", PlayersInRoom2[CurrntTurnId] } };
                 //PhotonNetwork.CurrentRoom.SetCustomProperties(props);
-            }*/
+            }
             //LoadArena();
         }
         //updatePlayerInRoom();
-        //MultiPlayerGamePlayManager.instance.PlayerLeft(other.NickName);
     }
 
     public void SetNextPlayer(int playerid = -1)
@@ -295,7 +210,6 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
         //PhotonNetwork.CurrentRoom.SetCustomProperties(props);
         //Debug.Log(PhotonNetwork.CurrentRoom.ToStringFull());
     }
-
     public string NextInList(List<string> list, string Current)
     {
         int currentid = 0;
@@ -331,7 +245,6 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
         //return list[currentid];
 
     }
-
     //public int getUserPos(List<string> list, string Current)
     //{
     //    return list.IndexOf()
@@ -341,6 +254,7 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
     //            return i;
     //    }
     //    return -1;
+
     //}
 
     public bool IsUserExistInRoomNow(string nickname)
@@ -363,18 +277,18 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
     {
         Debug.Log("OnMasterClientSwitched");
         ismaster = PhotonNetwork.IsMasterClient;
-        /*string nextturnName = PhotonNetwork.CurrentRoom.CustomProperties["nextturn"].ToString();
+        string nextturnName = PhotonNetwork.CurrentRoom.CustomProperties["nextturn"].ToString();
         if (!PlayersInRoom.Contains(nextturnName))
         {
 
-            Hashtable props = new Hashtable
-                    {
-                //{"nextturn",PhotonWrapper.instance.PlayersInRoom[0].Owner.NickName}
-                {"nextturn",PhotonWrapper.instance.PlayersInRoom2[0]}
-            };
-            PhotonNetwork.CurrentRoom.SetCustomProperties(props);
+            //Hashtable props = new Hashtable
+            //        {
+            //    //{"nextturn",PhotonWrapper.instance.PlayersInRoom[0].Owner.NickName}
+            //    {"nextturn",PhotonWrapper.instance.PlayersInRoom2[0]}
+            //};
+            //PhotonNetwork.CurrentRoom.SetCustomProperties(props);
             SetNextPlayer(0);
-        }*/
+        }
     }
 
     public override void OnLeftRoom()
@@ -404,6 +318,9 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
 
         //PhotonNetwork.LoadLevel("PunBasics-Room for " + PhotonNetwork.CurrentRoom.PlayerCount);
     }
+
+
+
 
     public void GetallplayerAroundTable()
     {
@@ -460,6 +377,7 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
             Debug.Log("GetRoomCustomProperty key=" + key + "  value=" + value);
             return value;
         }
+
         else
             return "";
     }
@@ -498,13 +416,6 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
         //Debug.Log();
     }
 
-    string GenerateUniqueCode()
-    {
-        System.Random generator = new System.Random();
-        int r = generator.Next(1, 1000000);
-        string str = generator.Next(0, 1000000).ToString("000000");
-        return str;
-    }
 
     private void OnEnable()
     {
@@ -549,10 +460,7 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
             SetRoomCustomProperty("GameState", "Started");
             GameManager.currentGameMode = GameMode.MultiPlayer;
             if (PhotonNetwork.IsMasterClient)
-            {
-                mainGameScene.loadingView.SetActive(false);
-                PhotonNetwork.LoadLevel("GameSceneOnline");
-            }                
+                PhotonNetwork.LoadLevel(2);
         }
         if (eventCode == PhotonEvent_EndGame)
         {
@@ -610,49 +518,6 @@ public class Launcher : MonoBehaviourPunCallbacks, IMatchmakingCallbacks, IOnEve
         foreach (var item in s1)
         {
             t.Add(item);
-        }
-    }
-
-    public void CloseGame()
-    {
-        StartCoroutine(DoSwitchScene());
-    }
-
-    IEnumerator DoSwitchScene()
-    {
-        PhotonNetwork.Disconnect();
-        while (PhotonNetwork.IsConnected)
-            yield return null;
-        mainGameScene.vsFriendsPanel.SetActive(false);
-        //SceneManager.LoadScene("HomeScene");
-    }
-
-    IEnumerator CheckNetwork()
-    {
-        while (true)
-        {
-            WWW www = new WWW("https://www.google.com");
-            yield return www;
-            if (string.IsNullOrEmpty(www.error))
-            {
-                //if (noNetwork.isOpen)
-                //{
-                //    noNetwork.HidePopup();
-
-                Time.timeScale = 1;
-                //}
-            }
-            else
-            {
-                if (Time.timeScale == 1)
-                {
-                    //noNetwork.ShowPopup();
-
-                    Time.timeScale = 0;
-                }
-            }
-
-            yield return new WaitForSecondsRealtime(1f);
         }
     }
 

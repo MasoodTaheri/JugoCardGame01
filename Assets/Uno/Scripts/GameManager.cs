@@ -7,12 +7,12 @@ public class GameManager : MonoBehaviour
     public const int TOTAL_AVATAR = 15;
     public static AudioSource audioSource;
     public static GameMode currentGameMode = GameMode.Computer;
-    public static DifficultyMode difficultyMode = DifficultyMode.Hard;
     public AudioClip buttonClip;
     public static AudioClip _buttonClip;
 
     void Start()
     {
+        //PlayerPrefs.DeleteAll();
         audioSource = GetComponent<AudioSource>();
         _buttonClip = buttonClip;
     }
@@ -152,12 +152,6 @@ public enum GameMode
     Computer,
     MultiPlayer
 }
-public enum DifficultyMode
-{
-    Easy,
-    Hard
-}
-
 public enum CardType
 {
     Other,

@@ -17,8 +17,6 @@ public class HomeScene : MonoBehaviour
     public Toggle avatarOptionPrefab;
     public InputField playerNameInput;
 
-    public Launcher launcher;
-
     private List<Toggle> toggleList;
 
     void Start()
@@ -72,8 +70,8 @@ public class HomeScene : MonoBehaviour
         playerAvatar2.sprite = Resources.Load<Sprite>("Avatar/" + GameManager.PlayerAvatarIndex);
         playerName.text = GameManager.PlayerAvatarName;
         playerName.GetComponent<EllipsisText>().UpdateText();
-    }
 
+    }
     public void ShowProfileChooser()
     {
         avatarSetting.SetActive(true);
@@ -106,34 +104,24 @@ public class HomeScene : MonoBehaviour
 
     public void OnMultiPlayerPlay()
     {
-        //        if (IsAdAvailable())
-        //        {
-        //#if UNITY_EDITOR
-        //            HandleRewardBasedVideoRewarded(null, null);
-        //#else
-        //            AdmobController.instance.ShowRewardBasedVideo();
-        //#endif
-        //        }
-        //        else
-        //        {
-        //        EnterMultiplayer();
+//        if (IsAdAvailable())
+//        {
+//#if UNITY_EDITOR
+//            HandleRewardBasedVideoRewarded(null, null);
+//#else
+//            AdmobController.instance.ShowRewardBasedVideo();
+//#endif
+//        }
+//        else
+//        {
+            EnterMultiplayer();
         //}
-
-        EnterMultiplayer();
         GameManager.PlayButton();
     }
 
     private void EnterMultiplayer()
     {
         GameManager.currentGameMode = GameMode.MultiPlayer;
-        UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
-    }
-
-    public void OnTrainingPlay()
-    {
-        GameManager.currentGameMode = GameMode.Computer;
-        GameManager.difficultyMode = DifficultyMode.Easy;
-        GameManager.PlayButton();
         UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
     }
 

@@ -21,7 +21,6 @@ public class Player : MonoBehaviour
     public Image timerImage;
     public GameObject timerOjbect;
     public Text pointTxt;
-    public int PutBestCardProbabilityAI = 60;  
 
     public List<int> cardVal;
 
@@ -120,11 +119,11 @@ public class Player : MonoBehaviour
         pickFromDeck = false;
         Timer = true;
         GetListOfValues();
-        
+        GamePlayManager.instance.DisableUnoBtn();
         if (GamePlayManager.instance.isEven || GamePlayManager.instance.isOdd)
         {
             GamePlayManager.instance.turnCount++;
-            if (GamePlayManager.instance.turnCount > (GamePlayManager.instance.playersCount - 1))
+            if (GamePlayManager.instance.turnCount > 3)
             {
                 GamePlayManager.instance.isEven = false;
                 GamePlayManager.instance.isOdd = false;
@@ -140,7 +139,6 @@ public class Player : MonoBehaviour
 
         if (isUserPlayer)
         {
-            GamePlayManager.instance.DisableUnoBtn();
             GamePlayManager.instance.roundsCount++;
             Debug.Log("isUserPlayer = "+ isUserPlayer);
             if ((GamePlayManager.instance.isEven && cardsPanel.AllowEvenCards.Count < 1) || (GamePlayManager.instance.isOdd && cardsPanel.AllowOddCards.Count < 1))
@@ -149,10 +147,10 @@ public class Player : MonoBehaviour
                 {
                     GamePlayManager.instance.EnableDeckClick();
                     GamePlayManager.instance.EnableCardDeck();
-                }
+                }                
             }
             UpdateCardColor();
-            if (GamePlayManager.instance.roundsCount > 0)   //(cardsPanel.AllowedCard.Count == 0)
+            if (GamePlayManager.instance.roundsCount >= 2)   //(cardsPanel.AllowedCard.Count == 0)
             {
                 GamePlayManager.instance.EnableUnoBtn();
             }
@@ -256,14 +254,14 @@ public class Player : MonoBehaviour
                 }
             }
 
-            //if (cardsPanel.AllowedCard.Count > 0 && GetTotalPoints() <= 10) // cardsPanel.cards.Count == 2)
-            //{
-            //    GamePlayManager.instance.EnableUnoBtn();
-            //}
-            //else
-            //{
-            //    GamePlayManager.instance.DisableUnoBtn();
-            //}
+            if (cardsPanel.AllowedCard.Count > 0 && GetTotalPoints() <= 10) // cardsPanel.cards.Count == 2)
+            {
+                GamePlayManager.instance.EnableUnoBtn();
+            }
+            else
+            {
+                GamePlayManager.instance.DisableUnoBtn();
+            }
         }
     }
 
@@ -289,6 +287,7 @@ public class Player : MonoBehaviour
     int count = 0;
     public void OnCardClick(Card c)
     {
+        Debug.Log("OnCardClick " + gameObject.name + "  " + c.name);
         if (c == null) {
             isUserClicked = false;
         }
@@ -361,8 +360,8 @@ public class Player : MonoBehaviour
                 if (isSequentialCards)
                 {
                     count++;
-                    Debug.LogError("isSequentialCards  count = " + count);
-                    if (count >= 2)
+                    Debug.LogError("count = " + count);
+                    if (count > 2)
                     {
                         isSequentialCards = false;
                         count = 0;
@@ -541,8 +540,6 @@ public class Player : MonoBehaviour
         //    return;
         //}
 
-        Debug.LogError(" Random.value < PutBestCardProbabilityAI / 100f =  " + Random.value +"  <  "+ PutBestCardProbabilityAI / 100f);
-
         yield return new WaitForSeconds(Random.Range(1f, totalTimer * (unoClick ? unoCoef : unoCoef * 2)));
         //Debug.LogError("GamePlayManager.instance.isEven = "+ GamePlayManager.instance.isEven + "  & GamePlayManager.instance.isOdd = " + GamePlayManager.instance.isOdd);
         //Debug.LogError("isSequentialCards = " + isSequentialCards + " &  isDoubleCards = " + isDoubleCards);
@@ -609,12 +606,12 @@ public class Player : MonoBehaviour
         }
         else if (isSequentialCards)
         {
-            Debug.LogError("isSequentialCards = " + isSequentialCards);
+            //Debug.LogError("isSequentialCards = " + isSequentialCards);
             for (int i = 0; i < sequentialList.Count; i++)
             {                
                 if (i < 3)
                 {
-                    Debug.LogError("sequentialList[] = " + sequentialList[i]);
+                    //Debug.LogError("sequentialList[] = " + sequentialList[i]);
                     if (i > 1)
                     {
                         isSequentialCards = false;
@@ -742,8 +739,6 @@ public class Player : MonoBehaviour
         //allow.Sort((x, y) => y.Type.CompareTo(x.Type));
         allow.Sort((x, y) => y.point.CompareTo(x.point));
 
-
-
         return allow[0];
     }
     public List<int> sequentialNum, sequentialList;
@@ -775,7 +770,7 @@ public class Player : MonoBehaviour
             {
                 for (int j = 0; j < sequenceNum[i].Count; j++)
                 {
-                    Debug.LogError("sequenceNum[i][j] = " + sequenceNum[i][j]);
+                    //Debug.LogError("sequenceNum[i][j] = " + sequenceNum[i][j]);
                     sequentialNum.Add(sequenceNum[i][j]);
                     cardName.Add(type + "_" + NumericToString(sequenceNum[i][j].ToString()));
                 }
@@ -786,7 +781,7 @@ public class Player : MonoBehaviour
                 //Debug.LogError("Before  counter = " + counter + "   sequentialNum.Count = " + sequentialNum.Count);                
                 if (sequentialNum.Count < 3)
                 {
-                    Debug.LogError(" sequentialNum.Count < 3  = " + sequentialNum.Count);
+                    //Debug.LogError(" sequentialNum.Count < 3  = " + sequentialNum.Count);
                     foreach (var card in cardsPanel.cards)
                     {
                         if (card.Value == CardValue.Wild)
@@ -800,7 +795,7 @@ public class Player : MonoBehaviour
                         }
                         else
                         {
-                            if (!isSequentialCards && counter < 1)
+                            if (counter < 1)
                             {
                                 isSequentialCards = false;
                             }                       
@@ -814,13 +809,13 @@ public class Player : MonoBehaviour
             }
             else
             {
-                Debug.LogError("   sequentialNum.Count = " + sequentialNum.Count);
-                if (!isSequentialCards && counter < 1)
+                //Debug.LogError("   sequentialNum.Count = " + sequentialNum.Count);
+                if (counter < 1)
                 {
                     isSequentialCards = false;
                 }                    
             }
-            Debug.LogError("isSequentialCards = " + isSequentialCards);
+            //Debug.LogError("isSequentialCards = " + isSequentialCards);
             if (isSequentialCards)
             {
                 for (int i = 0; i < sequentialNum.Count; i++)
@@ -830,11 +825,10 @@ public class Player : MonoBehaviour
                 }
                 //wild1 = false;
             }
-            Debug.LogError(" with 1 wild card isSequentialCards = " + isSequentialCards + " &  After counter = " + counter);
+            //Debug.LogError(" with 1 wild card isSequentialCards = " + isSequentialCards + " &  After counter = " + counter);
         }
         else
         {
-            Debug.LogError("Else sequentialNum.Count < 1  = " + sequentialNum.Count);
             if (CheckWildCount() >= 2)
             {
                 List<Card> allCards = cardsPanel.AllowedCard;
@@ -869,10 +863,9 @@ public class Player : MonoBehaviour
             }
             else
             {
-                if(!isSequentialCards)
-                    isSequentialCards = false;
+                isSequentialCards = false;
             }
-            Debug.LogError("wild2 = " + wild2 + "   isSequentialCards = " + isSequentialCards);
+            //Debug.LogError("wild2 = " + wild2 + "   isSequentialCards = " + isSequentialCards);
             if (wild2)
             {
                 isSequentialCards = true;
@@ -927,6 +920,7 @@ public class Player : MonoBehaviour
                 wildCards.Add(wildCard);
             }
         }
+
         return wildCards.Count;
     }
 
@@ -975,8 +969,7 @@ public class Player : MonoBehaviour
         }
         else
         {
-            if (!isSequentialCards)
-                isSequentialCards = false;
+            isSequentialCards = false;
         }
         Debug.LogError("wild2 = " + wild2 + "   isSequentialCards = " + isSequentialCards);
         if (wild2)
@@ -1042,6 +1035,7 @@ public class Player : MonoBehaviour
         //return only sequences longer than 3
         return allSequences.Where(sequence => sequence.Count >= minSequenceLength).ToList();
     }
+
     //Find sequence around start param value
     private List<int> FindLongestSequenceIncludingValue(Dictionary<int, int> itemDict, int value)
     {
@@ -1272,7 +1266,7 @@ public class Player : MonoBehaviour
                         }
                         else
                         {
-                            if (!isSequentialCards && count < 1)
+                            if (count < 1)
                                 isSequentialCards = false;
                         }
                     }
@@ -1442,8 +1436,16 @@ public class Player : MonoBehaviour
         cardVal = new List<int>();
         for (int i = 0; i < cardsPanel.cards.Count; i++)
         {
-            cardVal.Add(cardsPanel.cards[i].cardValue);
+            //if (cardsPanel.cards[i].Type != CardType.Other)
+            //{
+                cardVal.Add(cardsPanel.cards[i].cardValue);
+                //indexList.Add(i);
+            //}
         }
+        //foreach(var items in cardsPanel.cards)
+        //{
+        //    Debug.LogError("item.name = "+ items.name);
+        //}
     }
 
     public int GetTotalPoints()
